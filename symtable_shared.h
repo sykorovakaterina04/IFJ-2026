@@ -1,8 +1,6 @@
 #include "symtable.h"
 
 
-typedef enum {TYPE_INT, TYPE_DOUBLE, TYPE_STRING, TYPE_UNIT} type_t;
-
 typedef struct tdata{
     char* key;
     type_t type;
