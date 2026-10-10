@@ -2,6 +2,10 @@
 
 tree_t *symtable_init(){
     tree_t * tree = malloc(sizeof(tree_t));
+    if(tree == NULL){
+        fprintf(stderr, "%s", "chyba pri alokaci stromu");
+        return NULL;
+    }
     tree->root = NULL;
     tree->size = 0;
     return tree;
