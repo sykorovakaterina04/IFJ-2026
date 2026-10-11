@@ -1,10 +1,7 @@
 #include "symtable.h"
 
 
-typedef struct tdata{
-    char* key;
-    type_t type;
-}tdata_t;
+
 
 typedef struct tnode{
     tdata_t data;
