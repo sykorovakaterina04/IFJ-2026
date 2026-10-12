@@ -7,6 +7,5 @@ tree_t *symtable_init(){
         return NULL;
     }
     tree->root = NULL;
-    tree->size = 0;
     return tree;
 }
