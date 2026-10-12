@@ -20,7 +20,7 @@ tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, bool m
         return node;
     }
 
-    node->height = symtable_max(symtable_getheight(node->left), symtable_getheight(node->left)) + 1;
+    node->height = symtable_max(symtable_getheight(node->left), symtable_getheight(node->right)) + 1;
 
     int balance = symtable_getbalance(node);
 
