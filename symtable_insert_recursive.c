@@ -24,19 +24,24 @@ tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, bool m
 
     int balance = symtable_getbalance(node);
 
-    if (balance > 1 && strcmp(key, node->left->key) < 0){
-        return symtable_rrotate(node);
+    if (balance > 1){
+        if(strcmp(key, node->left->key) < 0){
+            return symtable_rrotate(node);
+        }
+        if(strcmp(key, node->left->key) < 0){
+            node->left = symtable_lrotate(node->left);
+            return symtable_rrotate(node);
+        }  
     }
-    if (balance < -1 && strcmp(key, node->right->key) > 0){
-        return symtable_lrotate(node);
-    }
-    if (balance > 1 && strcmp(key, node->left->key) < 0){
-        node->left = symtable_lrotate(node->left);
-        return symtable_rrotate(node);
-    }
-    if (balance < -1 && strcmp(key, node->right->key) > 0){
-        node->right = symtable_rrotate(node->right);
-        return symtable_lrotate(node);
+
+    if (balance < -1){
+        if(strcmp(key, node->left->key) < 0){
+            return symtablelrrotate(node);
+        }
+        if(strcmp(key, node->left->key) < 0){
+            node->right = symtable_rrotate(node->right);
+            return symtable_lrotate(node);
+        }  
     }
 
     return node;
