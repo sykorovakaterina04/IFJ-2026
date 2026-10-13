@@ -36,7 +36,7 @@ tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, bool m
 
     if (balance < -1){
         if(strcmp(key, node->left->key) < 0){
-            return symtablelrrotate(node);
+            return symtable_rrotate(node);
         }
         if(strcmp(key, node->left->key) < 0){
             node->right = symtable_rrotate(node->right);
