@@ -20,16 +20,16 @@ token_t automat(FILE *fptr) {
 		case KA_START:
 			if (c == '+') {
 				token.type = TOKEN_ADD;
-				strcpy(token.str_val, tmp);
+				token.str_val = NULL;
 				// return token;
 			}
 			if (c == '*') {
 				token.type = TOKEN_MUL;
-				strcpy(token.str_val, tmp);
+				token.str_val = NULL;
 			}
 			if (c == '/') {
 				token.type = TOKEN_DIV;
-				strcpy(token.str_val, tmp);
+				token.str_val = NULL;
 			}
 		}
 	}
