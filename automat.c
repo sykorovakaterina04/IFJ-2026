@@ -1,15 +1,5 @@
 #include "automat.h"
 
-struct token {
-	token_type type;
-	union {
-		long cislo;
-		double desetine_cislo;
-		// tady asi potreba vyresit dynamickou alokaci
-		char text[50];
-	};
-};
-
 typedef enum { KA_START } ka_states;
 
 token_t automat(FILE *fptr) {
@@ -17,7 +7,6 @@ token_t automat(FILE *fptr) {
 	token_t token;
 	int state = KA_START;
 	int c;
-	// nebo tady asi potreba vyresit dynamickou alokaci
 	char tmp[50];
 	int tmp_length = 0;
 
@@ -30,17 +19,17 @@ token_t automat(FILE *fptr) {
 		switch (state) {
 		case KA_START:
 			if (c == '+') {
-				token.type = SCITANI;
-				strcpy(token.text, tmp);
+				token.type = TOKEN_ADD;
+				strcpy(token.str_val, tmp);
 				// return token;
 			}
 			if (c == '*') {
-				token.type = NASOBENI;
-				strcpy(token.text, tmp);
+				token.type = TOKEN_MUL;
+				strcpy(token.str_val, tmp);
 			}
 			if (c == '/') {
-				token.type = DELENI;
-				strcpy(token.text, tmp);
+				token.type = TOKEN_DIV;
+				strcpy(token.str_val, tmp);
 			}
 		}
 	}
