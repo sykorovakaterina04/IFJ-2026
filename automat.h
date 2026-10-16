@@ -6,6 +6,39 @@ typedef struct token token_t;
 
 // TODO: komentarove stavy a unarni operatory
 typedef enum {
+	// ridici tokeny
+	TOKEN_EOF = 0,
+	TOKEN_EOL,
+
+	// identifikatory a literaly
+	TOKEN_IDENTIFIER,
+	TOKEN_INT,
+	TOKEN_DOUBLE,
+	TOKEN_STRING,
+
+	// operatory
+	TOKEN_MUL,
+	TOKEN_DIV,
+	TOKEN_ADD,
+	TOKEN_SUB,
+	TOKEN_GREATER,
+	TOKEN_GREATER_EQUAL,
+	TOKEN_LESS,
+	TOKEN_LESS_EQUAL,
+
+	// oddelovace a interpunkce
+	TOKEN_EQ,
+	TOKEN_NEQ,
+	TOKEN_ASSIGN,
+	TOKEN_LPAREN,
+	TOKEN_RPAREN,
+	TOKEN_COLON,
+	TOKEN_COMMA,
+	TOKEN_SEMICOLON,
+	TOKEN_DOT,
+	TOKEN_AT,
+
+	// klicova slova
 	KEYWORD_DEF,
 	KEYWORD_DO,
 	KEYWORD_DOUBLE,
@@ -19,6 +52,8 @@ typedef enum {
 	KEYWORD_UNIT,
 	KEYWORD_VAL,
 	KEYWORD_VAR,
+
+	// klicova slova pro rozsireni
 	KEYWORD_WHILE,
 	KEYWORD_BOOLEAN,
 	KEYWORD_CASE,
@@ -28,15 +63,5 @@ typedef enum {
 	KEYWORD_LIST,
 	KEYWORD_MATCH,
 	KEYWORD_TYPE,
-	NECO_KOMENTARE_IDK,
-	NASOBENI,
-	DELENI,
-	SCITANI,
-	ODCITANI,
-	VETSI,
-	VETSI_NEBO_ROVNO,
-	MENSI,
-	MENSI_NEBO_ROVNO,
-	ROVNO,
-	NEROVNO
+
 } token_type;
