@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct token token_t;
-
-// TODO: komentarove stavy a unarni operatory
 typedef enum {
 	// ridici tokeny
 	TOKEN_EOF = 0,
@@ -25,10 +22,10 @@ typedef enum {
 	TOKEN_GREATER_EQUAL,
 	TOKEN_LESS,
 	TOKEN_LESS_EQUAL,
-
-	// oddelovace a interpunkce
 	TOKEN_EQ,
 	TOKEN_NEQ,
+
+	// oddelovace a interpunkce
 	TOKEN_ASSIGN,
 	TOKEN_LPAREN,
 	TOKEN_RPAREN,
@@ -52,9 +49,9 @@ typedef enum {
 	KEYWORD_UNIT,
 	KEYWORD_VAL,
 	KEYWORD_VAR,
+	KEYWORD_WHILE,
 
 	// klicova slova pro rozsireni
-	KEYWORD_WHILE,
 	KEYWORD_BOOLEAN,
 	KEYWORD_CASE,
 	KEYWORD_CLASS,
@@ -65,3 +62,18 @@ typedef enum {
 	KEYWORD_TYPE,
 
 } token_type;
+
+typedef struct token token_t;
+
+struct token {
+	token_type type;
+	int line;
+	int col;
+	union {
+		long int_val;
+		double double_val;
+		char *str_val;
+	};
+};
+
+token_t automat(FILE *ftpr);
