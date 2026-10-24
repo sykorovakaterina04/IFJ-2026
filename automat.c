@@ -9,6 +9,51 @@ typedef enum {
 	KA_EXCLAMATION
 } ka_states;
 
+int str_init(string_t *s) {
+	s->capacity = 16;
+	s->data = (char *)malloc(s->capacity * sizeof(char));
+	if (s->data == NULL) {
+		fprintf(stderr, "Chyba: neuspesny malloc!\n");
+		return 0;
+	}
+	s->length = 0;
+	s->data[0] = '\0';
+	return 1;
+}
+
+int str_add_char(string_t *s, char c) {
+	if (s->length + 1 >= s->capacity) {
+		char *tmp;
+		s->capacity = 2 * s->capacity;
+		tmp = realloc(s->data, s->capacity);
+		if (tmp == NULL) {
+			fprintf(stderr, "Chyba: neuspesny realloc!\n");
+			return 0;
+		}
+		s->data = tmp;
+	}
+	s->data[s->length] = c;
+	s->length++;
+	s->data[s->length] = '\0';
+	return 1;
+}
+
+void str_clear(string_t *s) {
+	s->length = 0;
+	if (s->data != NULL) {
+		s->data[0] = '\0';
+	}
+}
+
+void str_free(string_t *s) {
+	if (s->data != NULL) {
+		free(s->data);
+		s->data = NULL;
+	}
+	s->length = 0;
+	s->capacity = 0;
+}
+
 token_t automat(FILE *fptr) {
 
 	token_t token;

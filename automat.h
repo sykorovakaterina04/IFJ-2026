@@ -63,6 +63,12 @@ typedef enum {
 
 } token_type;
 
+typedef struct {
+	char *data;
+	int length;
+	int capacity;
+} string_t;
+
 typedef struct token token_t;
 
 struct token {
@@ -76,4 +82,12 @@ struct token {
 	};
 };
 
-token_t automat(FILE *ftpr);
+token_t automat(FILE *fptr);
+
+int str_init(string_t *s);
+
+int str_add_char(string_t *s, char c);
+
+void str_clear(string_t *s);
+
+void str_free(string_t *s);
