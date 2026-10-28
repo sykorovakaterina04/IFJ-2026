@@ -1,6 +1,8 @@
 #include "automat.h"
 #include <ctype.h>
 
+#define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
+
 typedef enum {
 	KA_START,
 	KA_GREATER,
@@ -58,6 +60,30 @@ void str_free(string_t *s) {
 	}
 	s->length = 0;
 	s->capacity = 0;
+}
+
+typedef struct {
+	const char *keyword;
+	token_type_t type;
+} keyword_entry_t;
+
+static const keyword_entry_t keywords[] = {
+	{"def", KEYWORD_DEF},		{"do", KEYWORD_DO},
+	{"Double", KEYWORD_DOUBLE}, {"else", KEYWORD_ELSE},
+	{"if", KEYWORD_IF},			{"import", KEYWORD_IMPORT},
+	{"Int", KEYWORD_INT},		{"return", KEYWORD_RETURN},
+	{"String", KEYWORD_STRING}, {"then", KEYWORD_THEN},
+	{"Unit", KEYWORD_UNIT},		{"val", KEYWORD_VAL},
+	{"var", KEYWORD_VAR},		{"while", KEYWORD_WHILE},
+};
+
+token_type_t keyword_type(const char *str) {
+	for (size_t i = 0; i < KEYWORDS_COUNT; i++) {
+		if (strcmp(str, keywords[i].keyword) == 0) {
+			return keywords[i].type;
+		}
+	}
+	return TOKEN_IDENTIFIER;
 }
 
 token_t automat(FILE *fptr) {
