@@ -5,13 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* TODODODO:
-    cyklus na tokeny a switch na spousteni funkci
-    jednotlive funkce
-    spravne ocislovani chyb
 
-
-*/
 
 token_t current_token;
 
@@ -158,6 +152,16 @@ int parse_function(tree_t *global_symtable) {
         return 99; // Interní chyba alokace
     }
 
+    
+    
+    if(symtable_lookup(global_symtable,current_token.str_val) == NULL){
+        symtable_insert(global_symtable,current_token.str_val,TYPE_STRING,false,current_token.line);
+    }else{
+        symtable_destroy_tree(local_symtable);
+        return  4;
+    }
+
+
 
     symtable_destroy_tree(local_symtable);
     return 0; 
@@ -176,7 +180,12 @@ int parse_main(tree_t *global_symtable){
     }
     
 
-
+        
+    if(symtable_lookup(global_symtable,current_token.str_val) == NULL){
+        symtable_insert(global_symtable,current_token.str_val,TYPE_STRING,false,current_token.line); /////PREDELAT
+    }else{
+        return  4;
+    }
 
 
     symtable_destroy_tree(local_symtable);
