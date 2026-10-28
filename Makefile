@@ -5,6 +5,8 @@ CFLAGS = -Wall -Wextra -std=c11 -g
 
 all:
 
+run:
+
 build:
 
 check:
