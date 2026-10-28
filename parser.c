@@ -1,7 +1,9 @@
 #include "parser.h"
+#include "automat.h"
+#include "symtable.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <string.h>
 
 /* TODODODO:
     cyklus na tokeny a switch na spousteni funkci
@@ -11,42 +13,20 @@
 
 */
 
+token_t current_token;
 
-/* NOTES
-    bylo by super aby tokeny meli ID at jdou hazet do switche jednoduse
-*/
 
-token token; // = current token
+token_t get_token(){
+    // Zavolani pro dalsi token
 
-token get_token(){
-
-    //zavola lexer pro dalsi token
+    token_t t;
+    return t; // CHYBA
 
 }
 
-int parse(){
-    int result;
-
-    result = parse_prologue();
-    if(result != 0):
-        return 1; // chyba neni spravny zacatek 
-
-
-    while(token != "EOF"){
-        token = get_token();
-
-        switch(token.id)
-            case 1: // token def
-                parse_function()
-                
-
-
-    }
-
-
-
+void next(){
+    current_token = get_token();
 }
-
 
 int parse_prologue(){
 
@@ -54,28 +34,135 @@ int parse_prologue(){
    // import  
    // dalsi jeden token? asi nejaky special
    // ifj26.*
+    while(current_token.type == TOKEN_EOL){
+        next();
+    }
+    if(current_token.type != KEYWORD_IMPORT){
+        return 1; // CHYBA
+    }
 
-    if (token == "import") :
-        token = get_token();
-        if (token == "ifj"):
-            token = get_token();
-            if(token == "."):
-                token = get_token();
-                if(token== "*"):
-                    return 0;
-                else:
-                return 4;
-            return 3;
-        return 2;
-    return 1;
+    next(); // druhy token musi byt ifj
+
+    if (current_token.type != TOKEN_IDENTIFIER || strcmp(current_token.str_val, "ifj26") != 0){
+
+        return 2; // CHYBA
+    }
+    
+   next(); // treti token musi byt .
+    
+    if (current_token.type != TOKEN_DOT){
+        return 3; // CHYBA
+    }
+    
+    next(); // ctvrty token musi byt *
+
+    if(current_token.type != TOKEN_MUL){
+        return 4; // CHYBA
+    }
+    next();
+    return 0;
 }
 
-int parse_function(){}
+int parse() {
+    int result;
+    int main = 0;
+    tree_t *global_symtable = symtable_init();
+    
+    // nacteni tokenu
+    next();
 
-int parse_statement(){}
+    result = parse_prologue();
+    if (result != 0) {
+        return 1; // CHYBA // Chyba v prologu
+    }
 
-int parse_math(){}
+    // Hlavní cyklus
+    while (current_token.type != TOKEN_EOF) {
+        switch (current_token.type) {
+            case KEYWORD_DEF:
+                // Začátek definice funkce
+                result = parse_function(global_symtable);
+                if (result != 0){
+                    return 1; // CHYBA
+                } 
+                break;
+                
+            case TOKEN_EOL:
+                
+                next();
+                break;
+            
+            case TOKEN_AT:
+                next();
+                if (current_token.type != TOKEN_IDENTIFIER || strcmp(current_token.str_val, "main") != 0){
+                    return 2; // CHYBA
+                }
 
-void write_to_sym(){} // na zapisovani promennych do symtable
+                next();                
+                
+                while(current_token.type == TOKEN_EOL){
+                    next();
+                }
 
-void send_to_code(){} // na posilani do generovani kodu
+                if(current_token.type != KEYWORD_DEF){
+                    return 1; // CHYBA 
+                }
+
+                if(main) {
+                    return 1; // CHYBA vice mainu
+                }
+                main = 1;
+
+                result = parse_main();
+                if (result != 0) {
+                    return 1; //CHYBA
+                }
+
+                break;
+
+            default:
+                // Neočekávaný token
+                return 2; // CHYBA // Syntaktická chyba
+        }
+    }
+    if(main != 1){
+        return 1; // CHYBA 
+    }
+
+    symtable_destroy_tree(global_symtable);
+    return 0; // 
+}
+
+int parse_function(tree_t *global_symtable) {
+
+    next(); //z def na další token
+
+    // název funkce (identifikátor)
+    if (current_token.type != TOKEN_IDENTIFIER) {
+        return 2; // CHYBA // Syntaktická chyba
+    }
+
+    tree_t *local_symtable = symtable_init();
+
+
+    symtable_destroy_tree(local_symtable);
+    return 0; 
+}
+
+int parse_main(){
+    next(); //z def na další token
+
+    // název funkce (identifikátor)
+    if (current_token.type != TOKEN_IDENTIFIER) {
+        return 2; // CHYBA // Syntaktická chyba
+    }
+    tree_t *local_symtable = symtable_init();
+
+    
+
+
+
+
+    symtable_destroy_tree(local_symtable);
+    return 0; 
+}
