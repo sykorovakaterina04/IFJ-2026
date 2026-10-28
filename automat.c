@@ -6,7 +6,8 @@ typedef enum {
 	KA_GREATER,
 	KA_LESS,
 	KA_ASSIGN,
-	KA_EXCLAMATION
+	KA_EXCLAMATION,
+	KA_ID
 } ka_states;
 
 int str_init(string_t *s) {
@@ -56,6 +57,7 @@ void str_free(string_t *s) {
 
 token_t automat(FILE *fptr) {
 
+	string_t buffer;
 	token_t token;
 	token.str_val = NULL;
 	int state = KA_START;
@@ -144,6 +146,12 @@ token_t automat(FILE *fptr) {
 				token.str_val = NULL;
 				return token;
 			}
+			if (isalpha(c) || c == '_') {
+				str_init(&buffer);
+				str_add_char(&buffer, c);
+				state = KA_ID;
+				break;
+			}
 			break;
 		case KA_LESS:
 			if (c == '=') {
@@ -192,6 +200,24 @@ token_t automat(FILE *fptr) {
 			} else {
 				fprintf(stderr, "Lexikalni chyba: neplatny znak za '!'\n");
 				exit(1);
+			}
+			break;
+		case KA_ID:
+			if (isalnum(c) || c == '_') {
+				str_add_char(&buffer, c);
+			} else {
+				ungetc(c, fptr);
+				token.type = TOKEN_IDENTIFIER;
+				token.str_val =
+					(char *)malloc((buffer.length + 1) * sizeof(char));
+				if (token.str_val == NULL) {
+					str_free(&buffer);
+					fprintf(stderr, "Chyba: neuspesny malloc!\n");
+					exit(60);
+				}
+				strcpy(token.str_val, buffer.data);
+				str_free(&buffer);
+				return token;
 			}
 			break;
 		}
