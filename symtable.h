@@ -24,7 +24,6 @@ typedef struct tnode{
 }tnode_t;
 
 typedef struct tree{
-    int height;
     tnode_t *root;
 }tree_t;
 
