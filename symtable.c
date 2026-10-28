@@ -1,12 +1,11 @@
 #include "symtable.h"
 
 tree_t *symtable_init(){
-    tree_t * tree = malloc(sizeof(tree_t));
+    tree_t * tree = calloc(1, sizeof(tree_t));
     if(tree == NULL){
         fprintf(stderr, "%s", "chyba pri alokaci stromu");
         return NULL;
     }
-    tree->root = NULL;
     return tree;
 }
 
@@ -50,7 +49,7 @@ void symtable_destroy_tree(tree_t *tree){
 
 }
 
-tnode_t *symtable_rrotate(tnode_t *node){
+static tnode_t *symtable_rrotate(tnode_t *node){
     tnode_t *node_left = node->left;
     tnode_t *node_right = node_left->right;
 
@@ -63,7 +62,7 @@ tnode_t *symtable_rrotate(tnode_t *node){
     return node;
 }
 
-tnode_t * symtable_lrotate(tnode_t *node){
+static tnode_t * symtable_lrotate(tnode_t *node){
     tnode_t *node_right = node->right;
     tnode_t *node_left = node_right->right;
 
@@ -76,21 +75,21 @@ tnode_t * symtable_lrotate(tnode_t *node){
     return node;
 }
 
-int symtable_max(int a, int b){
+static int symtable_max(int a, int b){
     return (a > b) ? a : b;
 }
 
-int symtable_getheight(tnode_t *node){
+static int symtable_getheight(tnode_t *node){
     return (node == NULL) ? 0 : 
     (node->height);
 }
 
-int symtable_getbalance(tnode_t *node){
+static int symtable_getbalance(tnode_t *node){
     return (node == NULL) ? 0 : 
     symtable_getheight(node->left) - symtable_getheight(node->right);
 }
 
-void symtable_destroy(tnode_t *node){
+static void symtable_destroy(tnode_t *node){
     if (node != NULL){
         symtable_destroy(node->left);
         symtable_destroy(node->right);
@@ -100,7 +99,7 @@ void symtable_destroy(tnode_t *node){
 
 }
 
-tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, bool modifiable, int line){
+static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, bool modifiable, int line){
 
     if(node == NULL){
         tnode_t *new_node = malloc(sizeof(tnode_t));
