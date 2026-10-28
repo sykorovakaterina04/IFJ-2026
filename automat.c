@@ -7,7 +7,12 @@ typedef enum {
 	KA_LESS,
 	KA_ASSIGN,
 	KA_EXCLAMATION,
-	KA_ID
+	KA_ID,
+	KA_AT_M,
+	KA_AT_A,
+	KA_AT_I,
+	KA_AT_N,
+	KA_AT_MAIN_END
 } ka_states;
 
 int str_init(string_t *s) {
@@ -142,9 +147,8 @@ token_t automat(FILE *fptr) {
 				return token;
 			}
 			if (c == '@') {
-				token.type = TOKEN_AT;
-				token.str_val = NULL;
-				return token;
+				state = KA_AT_M;
+				break;
 			}
 			if (isalpha(c) || c == '_') {
 				str_init(&buffer);
@@ -218,6 +222,43 @@ token_t automat(FILE *fptr) {
 				strcpy(token.str_val, buffer.data);
 				str_free(&buffer);
 				return token;
+			}
+			break;
+		case KA_AT_M:
+			if (c == 'm') {
+				state = KA_AT_A;
+			} else {
+				exit(1);
+			}
+			break;
+		case KA_AT_A:
+			if (c == 'a') {
+				state = KA_AT_I;
+			} else {
+				exit(1);
+			}
+			break;
+		case KA_AT_I:
+			if (c == 'i') {
+				state = KA_AT_N;
+			} else {
+				exit(1);
+			}
+			break;
+		case KA_AT_N:
+			if (c == 'n') {
+				state = KA_AT_MAIN_END;
+			} else {
+				exit(1);
+			}
+			break;
+		case KA_AT_MAIN_END:
+			if (!(isalnum(c)) && c != '_') {
+				ungetc(c, fptr);
+				token.type = TOKEN_AT_MAIN;
+				return token;
+			} else {
+				exit(1);
 			}
 			break;
 		}

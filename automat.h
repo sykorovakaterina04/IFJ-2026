@@ -33,7 +33,7 @@ typedef enum {
 	TOKEN_COMMA,
 	TOKEN_SEMICOLON,
 	TOKEN_DOT,
-	TOKEN_AT,
+	TOKEN_AT_MAIN,
 
 	// klicova slova
 	KEYWORD_DEF,
