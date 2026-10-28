@@ -1,16 +1,19 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-int parse();
+#include "automat.h"
+#include "symtable.h"
 
-int parse_function(tree_t *global_symtable){}
-int parse_main(){}
+//aktualni token
+extern token_t current_token;
 
-int parse_statement(){}
-int parse_math(){}
+token_t get_token();
+void next(void);
+int parse(void);
+int parse_prologue(void);
 
+int parse_function(tree_t *global_symtable);
+int parse_main(tree_t *global_symtable);
 
-void write_to_sym(){} // na zapisovani promennych do symtable
-void send_to_code(){} // na posilani do generovani kodu
 
 #endif 
