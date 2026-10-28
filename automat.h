@@ -61,7 +61,7 @@ typedef enum {
 	KEYWORD_MATCH,
 	KEYWORD_TYPE,
 
-} token_type;
+} token_type_t;
 
 typedef struct {
 	char *data;
@@ -69,10 +69,8 @@ typedef struct {
 	int capacity;
 } string_t;
 
-typedef struct token token_t;
-
-struct token {
-	token_type type;
+typedef struct {
+	token_type_t type;
 	int line;
 	int col;
 	union {
@@ -80,7 +78,7 @@ struct token {
 		double double_val;
 		char *str_val;
 	};
-};
+} token_t;
 
 token_t automat(FILE *fptr);
 
