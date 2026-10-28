@@ -19,7 +19,7 @@ token_t current_token;
 token_t get_token(){
     // Zavolani pro dalsi token
 
-    token_t t;
+    token_t t = automat(stdin);
     return t; // CHYBA
 
 }
@@ -38,7 +38,7 @@ int parse_prologue(){
         next();
     }
     if(current_token.type != KEYWORD_IMPORT){
-        return 1; // CHYBA
+        return 2; // CHYBA
     }
 
     next(); // druhy token musi byt ifj
@@ -51,13 +51,13 @@ int parse_prologue(){
    next(); // treti token musi byt .
     
     if (current_token.type != TOKEN_DOT){
-        return 3; // CHYBA
+        return 2; // CHYBA
     }
     
     next(); // ctvrty token musi byt *
 
     if(current_token.type != TOKEN_MUL){
-        return 4; // CHYBA
+        return 2; // CHYBA
     }
     next();
     return 0;
@@ -66,14 +66,18 @@ int parse_prologue(){
 int parse() {
     int result;
     int main = 0;
-    tree_t *global_symtable = symtable_init();
-    
+    tree_t *global_symtable = symtable_init(); // globalni tabulka pro funkce
+    if (global_symtable == NULL) {
+        return 99; // Interní chyba alokace
+    }
+    register_functions(global_symtable); // nacteni vestavenych funkci
     // nacteni tokenu
     next();
 
     result = parse_prologue();
     if (result != 0) {
-        return 1; // CHYBA // Chyba v prologu
+        symtable_destroy_tree(global_symtable); // uklid
+        return 2; // CHYBA // Chyba v prologu
     }
 
     // Hlavní cyklus
@@ -83,7 +87,8 @@ int parse() {
                 // Začátek definice funkce
                 result = parse_function(global_symtable);
                 if (result != 0){
-                    return 1; // CHYBA
+                    symtable_destroy_tree(global_symtable); // uklid
+                    return result; // CHYBA
                 } 
                 break;
                 
@@ -95,6 +100,7 @@ int parse() {
             case TOKEN_AT:
                 next();
                 if (current_token.type != TOKEN_IDENTIFIER || strcmp(current_token.str_val, "main") != 0){
+                    symtable_destroy_tree(global_symtable); // uklid
                     return 2; // CHYBA
                 }
 
@@ -105,36 +111,41 @@ int parse() {
                 }
 
                 if(current_token.type != KEYWORD_DEF){
-                    return 1; // CHYBA 
+                    symtable_destroy_tree(global_symtable); // uklid
+                    return 2; // CHYBA 
                 }
 
                 if(main) {
-                    return 1; // CHYBA vice mainu
+                    symtable_destroy_tree(global_symtable); // uklid
+                    return 4; // CHYBA vice mainu
                 }
                 main = 1;
 
-                result = parse_main();
+                result = parse_main(global_symtable);
                 if (result != 0) {
-                    return 1; //CHYBA
+                    symtable_destroy_tree(global_symtable); // uklid
+                    return result; //CHYBA
                 }
 
                 break;
 
             default:
                 // Neočekávaný token
+                symtable_destroy_tree(global_symtable); // uklid
                 return 2; // CHYBA // Syntaktická chyba
         }
     }
     if(main != 1){
-        return 1; // CHYBA 
+        symtable_destroy_tree(global_symtable); // uklid
+        return 3; // CHYBA 
     }
 
-    symtable_destroy_tree(global_symtable);
+    symtable_destroy_tree(global_symtable); // uklid
     return 0; // 
 }
 
 int parse_function(tree_t *global_symtable) {
-
+    
     next(); //z def na další token
 
     // název funkce (identifikátor)
@@ -143,13 +154,16 @@ int parse_function(tree_t *global_symtable) {
     }
 
     tree_t *local_symtable = symtable_init();
+    if (local_symtable == NULL) {
+        return 99; // Interní chyba alokace
+    }
 
 
     symtable_destroy_tree(local_symtable);
     return 0; 
 }
 
-int parse_main(){
+int parse_main(tree_t *global_symtable){
     next(); //z def na další token
 
     // název funkce (identifikátor)
@@ -157,7 +171,9 @@ int parse_main(){
         return 2; // CHYBA // Syntaktická chyba
     }
     tree_t *local_symtable = symtable_init();
-
+    if (local_symtable == NULL) {
+        return 99; // Interní chyba alokace
+    }
     
 
 
@@ -165,4 +181,24 @@ int parse_main(){
 
     symtable_destroy_tree(local_symtable);
     return 0; 
+}
+
+int register_functions(tree_t *global_symtable){
+    int control = 0;
+
+    control |= symtable_insert(global_symtable,"print",TYPE_UNIT, false, 0 );
+    control |= symtable_insert(global_symtable,"readLine",TYPE_STRING, false, 0 );
+    control |= symtable_insert(global_symtable,"readInt",TYPE_INT, false, 0 );
+    control |= symtable_insert(global_symtable,"readDouble",TYPE_DOUBLE, false, 0 );
+    control |= symtable_insert(global_symtable,"toStr",TYPE_STRING, false, 0 );
+    control |= symtable_insert(global_symtable,"toInt",TYPE_INT, false, 0 );
+    control |= symtable_insert(global_symtable,"strLenght",TYPE_INT, false, 0 );
+    control |= symtable_insert(global_symtable,"subStr",TYPE_STRING, false, 0 );
+    control |= symtable_insert(global_symtable,"ord",TYPE_INT, false, 0 );
+    control |= symtable_insert(global_symtable,"chr",TYPE_STRING, false, 0 );
+
+    if(control != 0 ){
+        return 99;
+    }
+    return 0;
 }

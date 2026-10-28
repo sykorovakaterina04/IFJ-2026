@@ -15,5 +15,6 @@ int parse_prologue(void);
 int parse_function(tree_t *global_symtable);
 int parse_main(tree_t *global_symtable);
 
+int register_functions(tree_t *global_symtable);
 
 #endif 
