@@ -237,15 +237,19 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 			} else {
 				ungetc(c, fptr);
-				token.type = TOKEN_IDENTIFIER;
-				token.str_val =
-					(char *)malloc((buffer.length + 1) * sizeof(char));
-				if (token.str_val == NULL) {
-					str_free(&buffer);
-					fprintf(stderr, "Chyba: neuspesny malloc!\n");
-					exit(60);
+				token.type = keyword_type(buffer.data);
+				if (token.type == TOKEN_IDENTIFIER) {
+					token.str_val =
+						(char *)malloc((buffer.length + 1) * sizeof(char));
+					if (token.str_val == NULL) {
+						str_free(&buffer);
+						fprintf(stderr, "Chyba: neuspesny malloc!\n");
+						exit(60);
+					}
+					strcpy(token.str_val, buffer.data);
+				} else {
+					token.str_val = NULL;
 				}
-				strcpy(token.str_val, buffer.data);
 				str_free(&buffer);
 				return token;
 			}
