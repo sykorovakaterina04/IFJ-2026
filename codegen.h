@@ -1,4 +1,4 @@
-//#include "ast.h"
+#include "ast.h"
 
 void generace_kodu();
 
