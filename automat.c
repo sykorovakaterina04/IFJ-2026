@@ -182,7 +182,8 @@ token_t automat(FILE *fptr) {
 				state = KA_ID;
 				break;
 			}
-			break;
+			fprintf(stderr, "Lexikalni chyba: neocekavany znak '%c'\n", c);
+			exit(51);
 		case KA_LESS:
 			if (c == '=') {
 				token.type = TOKEN_LESS_EQUAL;
@@ -229,7 +230,7 @@ token_t automat(FILE *fptr) {
 				return token;
 			} else {
 				fprintf(stderr, "Lexikalni chyba: neplatny znak za '!'\n");
-				exit(1);
+				exit(51);
 			}
 			break;
 		case KA_ID:
@@ -258,28 +259,28 @@ token_t automat(FILE *fptr) {
 			if (c == 'm') {
 				state = KA_AT_A;
 			} else {
-				exit(1);
+				exit(51);
 			}
 			break;
 		case KA_AT_A:
 			if (c == 'a') {
 				state = KA_AT_I;
 			} else {
-				exit(1);
+				exit(51);
 			}
 			break;
 		case KA_AT_I:
 			if (c == 'i') {
 				state = KA_AT_N;
 			} else {
-				exit(1);
+				exit(51);
 			}
 			break;
 		case KA_AT_N:
 			if (c == 'n') {
 				state = KA_AT_MAIN_END;
 			} else {
-				exit(1);
+				exit(51);
 			}
 			break;
 		case KA_AT_MAIN_END:
@@ -288,7 +289,7 @@ token_t automat(FILE *fptr) {
 				token.type = TOKEN_AT_MAIN;
 				return token;
 			} else {
-				exit(1);
+				exit(51);
 			}
 			break;
 		}
