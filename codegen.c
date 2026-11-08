@@ -1,8 +1,12 @@
 #include "codegen.h"
 #include <stdio.h>
+void generace_kodu(){
 
-main(){
+    //vygeneruje hlavičku
+    printf(".IFJcode26\n");
+    
 
-    printf(".IFJcode26");
-    return 0;
+    //TODO:
+    //projit ast
+    //vytvorit case-switch pro kazdy typ uzlu
 }
