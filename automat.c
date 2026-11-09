@@ -18,7 +18,8 @@ typedef enum {
 	KA_SLASH,
 	KA_LINE_COMMENT,
 	KA_BLOCK_COMMENT,
-	KA_BLOCK_COMMENT_END
+	KA_BLOCK_COMMENT_END,
+	KA_BLOCK_COMMENT_SLASH
 } ka_states;
 
 int str_init(string_t *s) {
@@ -97,6 +98,7 @@ token_t automat(FILE *fptr) {
 	token.str_val = NULL;
 	int state = KA_START;
 	int c;
+	int comment_nesting = 0;
 
 	while (1) {
 		c = fgetc(fptr);
@@ -300,6 +302,7 @@ token_t automat(FILE *fptr) {
 				state = KA_LINE_COMMENT;
 				break;
 			} else if (c == '*') {
+				comment_nesting = 1;
 				state = KA_BLOCK_COMMENT;
 				break;
 			} else {
@@ -320,6 +323,8 @@ token_t automat(FILE *fptr) {
 		case KA_BLOCK_COMMENT:
 			if (c == '*') {
 				state = KA_BLOCK_COMMENT_END;
+			} else if (c == '/') {
+				state = KA_BLOCK_COMMENT_SLASH;
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
@@ -328,9 +333,28 @@ token_t automat(FILE *fptr) {
 			break;
 		case KA_BLOCK_COMMENT_END:
 			if (c == '/') {
-				state = KA_START;
+				comment_nesting--;
+				if (comment_nesting == 0) {
+					state = KA_START;
+				} else {
+					state = KA_BLOCK_COMMENT;
+				}
 			} else if (c == '*') {
 				state = KA_BLOCK_COMMENT_END;
+			} else if (c == EOF) {
+				fprintf(stderr,
+						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
+				exit(51);
+			} else {
+				state = KA_BLOCK_COMMENT;
+			}
+			break;
+		case KA_BLOCK_COMMENT_SLASH:
+			if (c == '*') {
+				comment_nesting++;
+				state = KA_BLOCK_COMMENT;
+			} else if (c == '/') {
+				state = KA_BLOCK_COMMENT_SLASH;
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
