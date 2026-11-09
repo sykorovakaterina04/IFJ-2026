@@ -1,4 +1,6 @@
 #include "ast.h"
 
-void generace_kodu();
+void projdi_strom(ast_node_t *node);
+
+void generuj_kodu(ast_tree_t *tree);
 
