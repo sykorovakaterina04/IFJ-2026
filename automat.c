@@ -25,7 +25,9 @@ typedef enum {
 	KA_STRING_SECOND_QUOTE,
 	KA_STRING_BODY,
 	KA_MULTILINE_STRING,
-	KA_STRING_ESCAPE
+	KA_STRING_ESCAPE,
+	KA_MULTILINE_STRING_END_1,
+	KA_MULTILINE_STRING_END_2
 } ka_states;
 
 int str_init(string_t *s) {
@@ -443,8 +445,16 @@ token_t automat(FILE *fptr) {
 			}
 			break;
 		case KA_MULTILINE_STRING:
-			fprintf(stderr, "Multiline string jeste neni implementovan\n");
-			exit(51);
+			if (c == '"') {
+				state = KA_MULTILINE_STRING_END_1;
+			} else if (c == EOF) {
+				fprintf(stderr,
+						"Lexikalni chyba: Neukonceny retezcovy literal\n");
+				exit(51);
+			} else {
+				str_add_char(&buffer, c);
+			}
+			break;
 		case KA_STRING_ESCAPE:
 			if (c == 'n') {
 				str_add_char(&buffer, '\n');
@@ -464,6 +474,35 @@ token_t automat(FILE *fptr) {
 			} else {
 				fprintf(stderr, "Lexikalni chyba: Neplatna escape sekvence\n");
 				exit(51);
+			}
+			break;
+		case KA_MULTILINE_STRING_END_1:
+			if (c == '"') {
+				state = KA_MULTILINE_STRING_END_2;
+			} else if (c == EOF) {
+				fprintf(stderr,
+						"Lexikalni chyba: Neukonceny retezcovy literal\n");
+				exit(51);
+			} else {
+				str_add_char(&buffer, '"');
+				str_add_char(&buffer, c);
+				state = KA_MULTILINE_STRING;
+			}
+			break;
+		case KA_MULTILINE_STRING_END_2:
+			if (c == '"') {
+				token.type = TOKEN_STRING;
+				token.str_val = buffer.data;
+				return token;
+			} else if (c == EOF) {
+				fprintf(stderr,
+						"Lexikalni chyba: Neukonceny retezcovy literal\n");
+				exit(51);
+			} else {
+				str_add_char(&buffer, '"');
+				str_add_char(&buffer, '"');
+				str_add_char(&buffer, c);
+				state = KA_MULTILINE_STRING;
 			}
 			break;
 		}
