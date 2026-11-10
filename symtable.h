@@ -13,7 +13,6 @@ typedef struct tdata{
     int line;
     int param_count;
     type_t param_types;
-    type_t return_type;
 }tdata_t;
 
 typedef struct tnode{

@@ -1,5 +1,47 @@
 #include "symtable.h"
 
+tree_t *symtable_init(){
+    tree_t * tree = calloc(1, sizeof(tree_t));
+    if(tree == NULL){
+        fprintf(stderr, "%s", "chyba pri alokaci stromu");
+        exit(99);
+    }
+    return tree;
+}
+
+static int symtable_getheight(tnode_t *node){
+    return (node == NULL) ? 0 : 
+    (node->height);
+}
+
+static int symtable_max(int a, int b){
+    return (a > b) ? a : b;
+}
+
+tdata_t * symtable_lookup(const tree_t *tree, char* key){
+
+    if(tree == NULL){
+        fprintf(stderr, "%s", "predany strom byl nulovy");
+        return NULL;
+    }
+
+    tnode_t *tmp = tree->root;
+
+    while(tmp != NULL){
+        int cmp = strcmp(key, tmp->key);
+        if(cmp < 0){
+            tmp = tmp->left;
+        }
+        if(cmp > 0){
+            tmp = tmp->right;
+        }
+        if (cmp == 0){
+            return &(tmp->data);
+        }
+    }
+    return NULL;
+}
+
 static tnode_t *symtable_rrotate(tnode_t *node){
     tnode_t *new_root = node->left;
     tnode_t *node_left = new_root->right;
@@ -16,7 +58,6 @@ static tnode_t *symtable_rrotate(tnode_t *node){
 static tnode_t * symtable_lrotate(tnode_t *node){
     tnode_t *new_root = node->right;
     tnode_t *node_right = new_root->left;
-
     new_root->left = node;
     node->right =node_right;
 
@@ -26,28 +67,9 @@ static tnode_t * symtable_lrotate(tnode_t *node){
     return new_root;
 }
 
-static int symtable_max(int a, int b){
-    return (a > b) ? a : b;
-}
-
-static int symtable_getheight(tnode_t *node){
-    return (node == NULL) ? 0 : 
-    (node->height);
-}
-
 static int symtable_getbalance(tnode_t *node){
     return (node == NULL) ? 0 : 
     symtable_getheight(node->left) - symtable_getheight(node->right);
-}
-
-static void symtable_destroy(tnode_t *node){
-    if (node != NULL){
-        symtable_destroy(node->left);
-        symtable_destroy(node->right);
-        free(node->key);
-        free(node);
-    }
-
 }
 
 static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, 
@@ -55,12 +77,16 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
 
     if(node == NULL){
         tnode_t *new_node = malloc(sizeof(tnode_t));
+        if ((new_node == NULL)){
+            fprintf(stderr, "%s", "chyba pri alokaci noveho elementu");
+            exit(99);
+        }
+        
         new_node->key = key;
         new_node->height = 1;
         new_node->data.type = type;
         new_node->data.modifiable = modifiable;
         new_node->data.line = line;
-        new_node->data.return_type = return_type;
         new_node->left = NULL;
         new_node->right = NULL;
 
@@ -103,16 +129,6 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
     return node;
 }
 
-
-tree_t *symtable_init(){
-    tree_t * tree = calloc(1, sizeof(tree_t));
-    if(tree == NULL){
-        fprintf(stderr, "%s", "chyba pri alokaci stromu");
-        return NULL;
-    }
-    return tree;
-}
-
 int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int line, type_t return_type){
 
     if (tree == NULL || key == NULL){
@@ -127,24 +143,14 @@ int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int l
     return 0;
 }
 
-tdata_t * symtable_lookup(const tree_t *tree, char* key){
-
-    tnode_t *tmp = tree->root;
-
-    while(tmp != NULL){
-        int cmp = strcmp(key, tmp->key);
-        if(cmp < 0){
-            tmp = tmp->left;
-        }
-        if(cmp > 0){
-            tmp = tmp->right;
-        }
-        if (cmp == 0){
-            return &(tmp->data);
-        }
+static void symtable_destroy(tnode_t *node){
+    if (node != NULL){
+        symtable_destroy(node->left);
+        symtable_destroy(node->right);
+        free(node->key);
+        free(node);
     }
-    fprintf(stderr, "%s", "hodnota se v tabluce nenachazi");
-    return NULL;
+
 }
 
 void symtable_destroy_tree(tree_t *tree){
@@ -152,4 +158,3 @@ void symtable_destroy_tree(tree_t *tree){
     free(tree);
 
 }
-
