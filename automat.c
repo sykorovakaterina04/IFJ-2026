@@ -34,7 +34,11 @@ typedef enum {
 	KA_DOUBLE_DOT,
 	KA_DOUBLE_DECIMAL,
 	KA_DOUBLE_UNDERSCORE,
-	KA_DOUBLE_SUFFIX
+	KA_DOUBLE_SUFFIX,
+	KA_DOUBLE_EXP,
+	KA_DOUBLE_EXP_SIGN,
+	KA_DOUBLE_EXP_DIGITS,
+	KA_DOUBLE_EXP_UNDERSCORE
 } ka_states;
 
 int str_init(string_t *s) {
@@ -534,6 +538,9 @@ token_t automat(FILE *fptr) {
 			} else if (c == '.') {
 				str_add_char(&buffer, c);
 				state = KA_DOUBLE_DOT;
+			} else if (c == 'e' || c == 'E') {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP;
 			} else {
 				ungetc(c, fptr);
 				token.type = TOKEN_INT;
@@ -551,6 +558,9 @@ token_t automat(FILE *fptr) {
 			} else if (c == '.') {
 				str_add_char(&buffer, c);
 				state = KA_DOUBLE_DOT;
+			} else if (c == 'e' || c == 'E') {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP;
 			} else {
 				ungetc(c, fptr);
 				token.type = TOKEN_INT;
@@ -586,6 +596,9 @@ token_t automat(FILE *fptr) {
 				state = KA_DOUBLE_UNDERSCORE;
 			} else if (c == 'd' || c == 'D') {
 				state = KA_DOUBLE_SUFFIX;
+			} else if (c == 'e' || c == 'E') {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP;
 			} else {
 				ungetc(c, fptr);
 				token.double_val = strtod(buffer.data, NULL);
@@ -615,6 +628,53 @@ token_t automat(FILE *fptr) {
 				token.type = TOKEN_DOUBLE;
 				str_free(&buffer);
 				return token;
+			}
+			break;
+		case KA_DOUBLE_EXP:
+			if (c == '+' || c == '-') {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP_SIGN;
+			} else if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP_DIGITS;
+			} else {
+				fprintf(stderr, "Lexikalni chyba: Neplatny format exponentu\n");
+				exit(1);
+			}
+			break;
+
+		case KA_DOUBLE_EXP_SIGN:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP_DIGITS;
+			} else {
+				fprintf(stderr, "Lexikalni chyba: Neplatny format exponentu\n");
+				exit(1);
+			}
+			break;
+		case KA_DOUBLE_EXP_DIGITS:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP_DIGITS;
+			} else if (c == '_') {
+				state = KA_DOUBLE_EXP_UNDERSCORE;
+			} else if (c == 'd' || c == 'D') {
+				state = KA_DOUBLE_SUFFIX;
+			} else {
+				ungetc(c, fptr);
+				token.double_val = strtod(buffer.data, NULL);
+				token.type = TOKEN_DOUBLE;
+				str_free(&buffer);
+				return token;
+			}
+			break;
+		case KA_DOUBLE_EXP_UNDERSCORE:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_EXP_DIGITS;
+			} else {
+				fprintf(stderr, "Lexikalni chyba: Neplatny format exponentu\n");
+				exit(1);
 			}
 			break;
 		}
