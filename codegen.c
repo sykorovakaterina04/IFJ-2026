@@ -4,24 +4,24 @@
 void ast_literal(ast_node_t *node){
     switch (node->return_type){
         case TYPE_INT:
-            printf("PUSHS int@%d\n", node->literal.i_val);
+            printf("PUSHS int@%d\n", node->data.literal.i_val);
             break;
         case TYPE_DOUBLE:
-            printf("PUSHS float@%a\n", node->literal.d_val);
+            printf("PUSHS float@%a\n", node->data.literal.d_val);
             break;
         case TYPE_STRING:
             printf("PUSHS string@"); //TODO: poresit uprava prebraneho stringu pro pravidla IFJcode26
-                for(int i = 0; i < strlen(node->literal.string); i++){
-                    if(node->literal.string[i] == 32){
+                for(int i = 0; i < strlen(node->data.literal.string_val); i++){
+                    if(node->data.literal.string_val[i] == 32){
                         printf("\\032");
-                    } else if (node->literal.string[i] == 92){
+                    } else if (node->data.literal.string_val[i] == 92){
                         printf("\\092");
-                    } else if (node->literal.string[i] == 35){
+                    } else if (node->data.literal.string_val[i] == 35){
                         printf("\\035");
-                    } else if (node->literal.string[i] <= 32){
-                        printf("\\%03d",node->literal.string[i]);
+                    } else if (node->data.literal.string_val[i] <= 32){
+                        printf("\\%03d",node->data.literal.string_val[i]);
                     } else {
-                        printf("%c",node->literal.string[i]);
+                        printf("%c",node->data.literal.string_val[i]);
                     }
                 }
             printf("\n");
@@ -30,16 +30,28 @@ void ast_literal(ast_node_t *node){
         }
 }
 
-void ast_var(ast_node_t *node){
+void ast_var_def(ast_node_t *node){
+
+    switch (node->data.variable.frame){
+        case LOCAL:
+            printf("DEFVAR LF@%s\n", node->data.variable.name);
+            break;
+        case GLOBAL:
+            printf("DEFVAR GF@%s\n", node->data.variable.name);
+            break;
+        case TMP:
+            printf("DEFVAR TF@%s\n", node->data.variable.name);
+            break;
+        }
 
 }
 
 void ast_binop(ast_node_t *node){
 
-    projdi_strom(node->binop.left);
-    projdi_strom(node->binop.right);
+    projdi_strom(node->data.binop.left);
+    projdi_strom(node->data.binop.right);
 
-    switch (node->binop.znak){
+    switch (node->data.binop.op){
         case ('+'):
             printf("ADDS\n");
             break;
@@ -60,6 +72,18 @@ void ast_binop(ast_node_t *node){
     }
 }
 
+//promnnena je pouzita (napr jako parametr)
+void ast_var(ast_node_t *node){
+
+}
+
+//do promenne se prirazuje hodnota
+void ast_assing(ast_node_t *node){
+
+    
+
+}
+
 void projdi_strom(ast_node_t *node){
 
     if(node == NULL){
@@ -72,10 +96,13 @@ void projdi_strom(ast_node_t *node){
         case AST_BINOP:
                 ast_binop(node);
             break;
-        case AST_FUNC_DEF:
-            //TODO
-            break;
         case AST_VAR_DEF:
+                ast_var_def(node);
+            break;
+        case AST_VAR:
+                ast_var(node);
+            break;
+        case AST_FUNC_DEF:
             //TODO
             break;
         case AST_ASSIGN:
@@ -88,9 +115,6 @@ void projdi_strom(ast_node_t *node){
             //TODO
             break;
         case AST_CALL:
-            //TODO
-            break;
-        case AST_VAR:
             //TODO
             break;
         case AST_BLOCK:
