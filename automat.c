@@ -27,7 +27,10 @@ typedef enum {
 	KA_MULTILINE_STRING,
 	KA_STRING_ESCAPE,
 	KA_MULTILINE_STRING_END_1,
-	KA_MULTILINE_STRING_END_2
+	KA_MULTILINE_STRING_END_2,
+	KA_INT,
+	KA_ZERO,
+	KA_INT_UNDERSCORE
 } ka_states;
 
 int str_init(string_t *s) {
@@ -199,6 +202,16 @@ token_t automat(FILE *fptr) {
 			if (c == '"') {
 				str_init(&buffer);
 				state = KA_STRING_FIRST_QUOTE;
+				break;
+			}
+			if (c == '0') {
+				state = KA_ZERO;
+				break;
+			}
+			if (c >= '1' && c <= '9') {
+				str_init(&buffer);
+				str_add_char(&buffer, c);
+				state = KA_INT;
 				break;
 			}
 			fprintf(stderr, "Lexikalni chyba: neocekavany znak '%c'\n", c);
@@ -503,6 +516,43 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, '"');
 				str_add_char(&buffer, c);
 				state = KA_MULTILINE_STRING;
+			}
+			break;
+		case KA_ZERO:
+			if (isdigit(c)) {
+				fprintf(stderr, "Lexikalni chyba: Cislo nesmi zacinat nulou\n");
+				exit(1);
+			} else if (c == '_') {
+				fprintf(stderr, "Lexikalni chyba: Za nulou nesmi byt '_'\n");
+				exit(1);
+			} else {
+				ungetc(c, fptr);
+				token.type = TOKEN_INT;
+				token.int_val = 0;
+				return token;
+			}
+			break;
+		case KA_INT:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_INT;
+			} else if (c == '_') {
+				state = KA_INT_UNDERSCORE;
+			} else {
+				ungetc(c, fptr);
+				token.type = TOKEN_INT;
+				token.int_val = strtoll(buffer.data, NULL, 10);
+				str_free(&buffer);
+				return token;
+			}
+			break;
+		case KA_INT_UNDERSCORE:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_INT;
+			} else {
+				fprintf(stderr, "Lexikalni chyba: Neplatny format cisla int\n");
+				exit(1);
 			}
 			break;
 		}
