@@ -7,16 +7,17 @@
 typedef enum {TYPE_INT, TYPE_DOUBLE, TYPE_STRING, TYPE_UNIT} type_t;
 
 typedef struct tdata{
-    
+    bool is_function;
     type_t type;
-
     bool modifiable;
-
     int line;
+    int param_count;
+    type_t param_types;
+    type_t return_type;
 }tdata_t;
 
 typedef struct tnode{
-    char* key;                              
+    char* key;
     tdata_t data;
     struct tnode *left;
     struct tnode *right;
@@ -24,28 +25,18 @@ typedef struct tnode{
 }tnode_t;
 
 typedef struct tree{
+    int height;
     tnode_t *root;
 }tree_t;
 
 tree_t *symtable_init();
 
-int symtable_insert(tree_t *tree, char *key, type_t type, bool modifiable, int line);
+int symtable_insert(tree_t *tree, char *key, type_t type, bool modifiable, int line, type_t return_type);
 
 tdata_t *symtable_lookup(const tree_t *tree, char *key);
 
 void symtable_destroy_tree(tree_t *tree);
 
-tnode_t *symtable_rrotate(tnode_t *node);
+static int symtable_max(int ,int b);
 
-tnode_t *symtable_lrotate(tnode_t *node);
-
-int symtable_max(int ,int b);
-
-int symtable_getheight(tnode_t *node);
-
-int symtable_getbalance(tnode_t *node);
-
-void symtable_destroy(tnode_t *node);
-
-tnode_t *symtable_insert_recursive(tnode_t *node, char *key, type_t type, bool modifiable, int line);
 
