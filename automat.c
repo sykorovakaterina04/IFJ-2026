@@ -20,7 +20,12 @@ typedef enum {
 	KA_BLOCK_COMMENT,
 	KA_BLOCK_COMMENT_END,
 	KA_BLOCK_COMMENT_SLASH,
-	KA_AFTER_BLOCK_COMMENT_NL
+	KA_AFTER_BLOCK_COMMENT_NL,
+	KA_STRING_FIRST_QUOTE,
+	KA_STRING_SECOND_QUOTE,
+	KA_STRING_BODY,
+	KA_MULTILINE_STRING,
+	KA_STRING_ESCAPE
 } ka_states;
 
 int str_init(string_t *s) {
@@ -187,6 +192,11 @@ token_t automat(FILE *fptr) {
 				str_init(&buffer);
 				str_add_char(&buffer, c);
 				state = KA_ID;
+				break;
+			}
+			if (c == '"') {
+				str_init(&buffer);
+				state = KA_STRING_FIRST_QUOTE;
 				break;
 			}
 			fprintf(stderr, "Lexikalni chyba: neocekavany znak '%c'\n", c);
@@ -390,6 +400,69 @@ token_t automat(FILE *fptr) {
 				fprintf(stderr,
 						"Lexikalni chyba: za vice radkovym blokovym komentarem "
 						"nesmi byt token na stejnem radku\n");
+				exit(51);
+			}
+			break;
+		case KA_STRING_FIRST_QUOTE:
+			if (c == '"') {
+				state = KA_STRING_SECOND_QUOTE;
+			} else if (c == '\\') {
+				state = KA_STRING_ESCAPE;
+			} else if (c == '\n' || c == EOF) {
+				fprintf(stderr,
+						"Lexikalni chyba: Neukonceny retezcovy literal\n");
+				exit(51);
+			} else {
+				str_add_char(&buffer, c);
+				state = KA_STRING_BODY;
+			}
+			break;
+		case KA_STRING_SECOND_QUOTE:
+			if (c == '"') {
+				state = KA_MULTILINE_STRING;
+			} else {
+				ungetc(c, fptr);
+				token.type = TOKEN_STRING;
+				token.str_val = buffer.data;
+				return token;
+			}
+			break;
+		case KA_STRING_BODY:
+			if (c == '"') {
+				token.type = TOKEN_STRING;
+				token.str_val = buffer.data;
+				return token;
+			} else if (c == '\\') {
+				state = KA_STRING_ESCAPE;
+			} else if (c == '\n' || c == EOF) {
+				fprintf(stderr,
+						"Lexikalni chyba: Neukonceny retezcovy literal\n");
+				exit(51);
+			} else {
+				str_add_char(&buffer, c);
+			}
+			break;
+		case KA_MULTILINE_STRING:
+			fprintf(stderr, "Multiline string jeste neni implementovan\n");
+			exit(51);
+		case KA_STRING_ESCAPE:
+			if (c == 'n') {
+				str_add_char(&buffer, '\n');
+				state = KA_STRING_BODY;
+			} else if (c == 'r') {
+				str_add_char(&buffer, '\r');
+				state = KA_STRING_BODY;
+			} else if (c == 't') {
+				str_add_char(&buffer, '\t');
+				state = KA_STRING_BODY;
+			} else if (c == '\\') {
+				str_add_char(&buffer, '\\');
+				state = KA_STRING_BODY;
+			} else if (c == '"') {
+				str_add_char(&buffer, '\"');
+				state = KA_STRING_BODY;
+			} else {
+				fprintf(stderr, "Lexikalni chyba: Neplatna escape sekvence\n");
 				exit(51);
 			}
 			break;
