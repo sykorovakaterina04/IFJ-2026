@@ -202,7 +202,7 @@ token_t automat(FILE *fptr) {
 				break;
 			}
 			fprintf(stderr, "Lexikalni chyba: neocekavany znak '%c'\n", c);
-			exit(51);
+			exit(1);
 		case KA_LESS:
 			if (c == '=') {
 				token.type = TOKEN_LESS_EQUAL;
@@ -249,7 +249,7 @@ token_t automat(FILE *fptr) {
 				return token;
 			} else {
 				fprintf(stderr, "Lexikalni chyba: neplatny znak za '!'\n");
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_ID:
@@ -264,7 +264,7 @@ token_t automat(FILE *fptr) {
 					if (token.str_val == NULL) {
 						str_free(&buffer);
 						fprintf(stderr, "Chyba: neuspesny malloc!\n");
-						exit(60);
+						exit(99);
 					}
 					strcpy(token.str_val, buffer.data);
 				} else {
@@ -278,28 +278,28 @@ token_t automat(FILE *fptr) {
 			if (c == 'm') {
 				state = KA_AT_A;
 			} else {
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_AT_A:
 			if (c == 'a') {
 				state = KA_AT_I;
 			} else {
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_AT_I:
 			if (c == 'i') {
 				state = KA_AT_N;
 			} else {
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_AT_N:
 			if (c == 'n') {
 				state = KA_AT_MAIN_END;
 			} else {
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_AT_MAIN_END:
@@ -308,7 +308,7 @@ token_t automat(FILE *fptr) {
 				token.type = TOKEN_AT_MAIN;
 				return token;
 			} else {
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_SLASH:
@@ -343,7 +343,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
-				exit(51);
+				exit(1);
 			} else if (c == '\n') {
 				comment_has_nl++;
 			}
@@ -365,7 +365,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
-				exit(51);
+				exit(1);
 			} else if (c == '\n') {
 				comment_has_nl++;
 			} else {
@@ -381,7 +381,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
-				exit(51);
+				exit(1);
 			} else if (c == '\n') {
 				comment_has_nl++;
 			} else {
@@ -402,7 +402,7 @@ token_t automat(FILE *fptr) {
 				fprintf(stderr,
 						"Lexikalni chyba: za vice radkovym blokovym komentarem "
 						"nesmi byt token na stejnem radku\n");
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_STRING_FIRST_QUOTE:
@@ -413,7 +413,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == '\n' || c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Neukonceny retezcovy literal\n");
-				exit(51);
+				exit(1);
 			} else {
 				str_add_char(&buffer, c);
 				state = KA_STRING_BODY;
@@ -439,7 +439,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == '\n' || c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Neukonceny retezcovy literal\n");
-				exit(51);
+				exit(1);
 			} else {
 				str_add_char(&buffer, c);
 			}
@@ -450,7 +450,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Neukonceny retezcovy literal\n");
-				exit(51);
+				exit(1);
 			} else {
 				str_add_char(&buffer, c);
 			}
@@ -473,7 +473,7 @@ token_t automat(FILE *fptr) {
 				state = KA_STRING_BODY;
 			} else {
 				fprintf(stderr, "Lexikalni chyba: Neplatna escape sekvence\n");
-				exit(51);
+				exit(1);
 			}
 			break;
 		case KA_MULTILINE_STRING_END_1:
@@ -482,7 +482,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Neukonceny retezcovy literal\n");
-				exit(51);
+				exit(1);
 			} else {
 				str_add_char(&buffer, '"');
 				str_add_char(&buffer, c);
@@ -497,7 +497,7 @@ token_t automat(FILE *fptr) {
 			} else if (c == EOF) {
 				fprintf(stderr,
 						"Lexikalni chyba: Neukonceny retezcovy literal\n");
-				exit(51);
+				exit(1);
 			} else {
 				str_add_char(&buffer, '"');
 				str_add_char(&buffer, '"');
