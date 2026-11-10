@@ -4,13 +4,13 @@
 void ast_literal(ast_node_t *node){
     switch (node->return_type){
         case TYPE_INT:
-            printf("int@%d", node->literal.i_val);
+            printf("PUSHS int@%d\n", node->literal.i_val);
             break;
         case TYPE_DOUBLE:
-            printf("float@%a", node->literal.d_val);
+            printf("PUSHS float@%a\n", node->literal.d_val);
             break;
         case TYPE_STRING:
-            printf("string@"); //TODO: poresit uprava prebraneho stringu pro pravidla IFJcode26
+            printf("PUSHS string@"); //TODO: poresit uprava prebraneho stringu pro pravidla IFJcode26
                 for(int i = 0; i < strlen(node->literal.string); i++){
                     if(node->literal.string[i] == 32){
                         printf("\\032");
@@ -24,6 +24,7 @@ void ast_literal(ast_node_t *node){
                         printf("%c",node->literal.string[i]);
                     }
                 }
+            printf("\n");
             break;
         //case TYPE_BOOL v pripade rozsireni BOOLTHEN
         }
