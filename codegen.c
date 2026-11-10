@@ -30,8 +30,34 @@ void ast_literal(ast_node_t *node){
         }
 }
 
+void ast_var(ast_node_t *node){
+
+}
+
 void ast_binop(ast_node_t *node){
-    
+
+    projdi_strom(node->binop.left);
+    projdi_strom(node->binop.right);
+
+    switch (node->binop.znak){
+        case ('+'):
+            printf("ADDS\n");
+            break;
+        case ('-'):
+            printf("SUBS\n");
+            break;
+        case('*'):
+            printf("MULS\n");
+            break;
+        case('/'): //je potreba poresit zda je vysledek operace int nebo double
+            if(node->return_type == TYPE_INT){
+                printf("IDIVS\n");
+            } else if (node->return_type == TYPE_DOUBLE){
+                printf("DIVS\n");
+            }
+            break;
+        
+    }
 }
 
 void projdi_strom(ast_node_t *node){
