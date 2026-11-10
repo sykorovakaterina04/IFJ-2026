@@ -30,7 +30,11 @@ typedef enum {
 	KA_MULTILINE_STRING_END_2,
 	KA_INT,
 	KA_ZERO,
-	KA_INT_UNDERSCORE
+	KA_INT_UNDERSCORE,
+	KA_DOUBLE_DOT,
+	KA_DOUBLE_DECIMAL,
+	KA_DOUBLE_UNDERSCORE,
+	KA_DOUBLE_SUFFIX
 } ka_states;
 
 int str_init(string_t *s) {
@@ -205,6 +209,8 @@ token_t automat(FILE *fptr) {
 				break;
 			}
 			if (c == '0') {
+				str_init(&buffer);
+				str_add_char(&buffer, c);
 				state = KA_ZERO;
 				break;
 			}
@@ -525,10 +531,14 @@ token_t automat(FILE *fptr) {
 			} else if (c == '_') {
 				fprintf(stderr, "Lexikalni chyba: Za nulou nesmi byt '_'\n");
 				exit(1);
+			} else if (c == '.') {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_DOT;
 			} else {
 				ungetc(c, fptr);
 				token.type = TOKEN_INT;
 				token.int_val = 0;
+				str_free(&buffer);
 				return token;
 			}
 			break;
@@ -538,6 +548,9 @@ token_t automat(FILE *fptr) {
 				state = KA_INT;
 			} else if (c == '_') {
 				state = KA_INT_UNDERSCORE;
+			} else if (c == '.') {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_DOT;
 			} else {
 				ungetc(c, fptr);
 				token.type = TOKEN_INT;
@@ -553,6 +566,55 @@ token_t automat(FILE *fptr) {
 			} else {
 				fprintf(stderr, "Lexikalni chyba: Neplatny format cisla int\n");
 				exit(1);
+			}
+			break;
+		case KA_DOUBLE_DOT:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_DECIMAL;
+			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: Neplatny format cisla double\n");
+				exit(1);
+			}
+			break;
+		case KA_DOUBLE_DECIMAL:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_DECIMAL;
+			} else if (c == '_') {
+				state = KA_DOUBLE_UNDERSCORE;
+			} else if (c == 'd' || c == 'D') {
+				state = KA_DOUBLE_SUFFIX;
+			} else {
+				ungetc(c, fptr);
+				token.double_val = strtod(buffer.data, NULL);
+				token.type = TOKEN_DOUBLE;
+				str_free(&buffer);
+				return token;
+			}
+			break;
+		case KA_DOUBLE_UNDERSCORE:
+			if (isdigit(c)) {
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_DECIMAL;
+			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: Neplatny format cisla double\n");
+				exit(1);
+			}
+			break;
+		case KA_DOUBLE_SUFFIX:
+			if (isalnum(c) || c == '_') {
+				fprintf(stderr,
+						"Lexikalni chyba: Neplatny znak za sufixem 'd'/'D'\n");
+				exit(1);
+			} else {
+				ungetc(c, fptr);
+				token.double_val = strtod(buffer.data, NULL);
+				token.type = TOKEN_DOUBLE;
+				str_free(&buffer);
+				return token;
 			}
 			break;
 		}
