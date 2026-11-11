@@ -3,13 +3,13 @@
 
 void ast_literal(ast_node_t *node){
     switch (node->return_type){
-        case TYPE_INT:
+        case INT:
             printf("PUSHS int@%d\n", node->data.literal.i_val);
             break;
-        case TYPE_DOUBLE:
+        case DOUBLE:
             printf("PUSHS float@%a\n", node->data.literal.d_val);
             break;
-        case TYPE_STRING:
+        case STRING:
             printf("PUSHS string@"); //TODO: poresit uprava prebraneho stringu pro pravidla IFJcode26
                 for(int i = 0; i < strlen(node->data.literal.string_val); i++){
                     if(node->data.literal.string_val[i] == 32){
@@ -62,9 +62,9 @@ void ast_binop(ast_node_t *node){
             printf("MULS\n");
             break;
         case('/'): //je potreba poresit zda je vysledek operace int nebo double
-            if(node->return_type == TYPE_INT){
+            if(node->return_type == INT){
                 printf("IDIVS\n");
-            } else if (node->return_type == TYPE_DOUBLE){
+            } else if (node->return_type == DOUBLE){
                 printf("DIVS\n");
             }
             break;
@@ -84,6 +84,15 @@ void ast_assing(ast_node_t *node){
 
 }
 
+void ast_func_def(ast_node_t *node){
+
+
+}
+
+void ast_if(ast_node_t *node){
+
+}
+
 void projdi_strom(ast_node_t *node){
 
     if(node == NULL){
@@ -100,16 +109,16 @@ void projdi_strom(ast_node_t *node){
                 ast_var_def(node);
             break;
         case AST_VAR:
-                ast_var(node);
+                ast_var(node);//WIP1
             break;
         case AST_FUNC_DEF:
-            //TODO
+            //WIP3
             break;
         case AST_ASSIGN:
-            //TODO
+            //WIP2
             break;
         case AST_IF:
-            //TODO
+            //WIP4
             break;
         case AST_WHILE:
             //TODO
