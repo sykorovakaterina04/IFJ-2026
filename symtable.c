@@ -127,7 +127,7 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
     return node;
 }
 
-int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int line, type_t return_type){
+int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int line){
 
     if (tree == NULL || key == NULL){
         fprintf(stderr, "%s", "spatne zadane paramery");
