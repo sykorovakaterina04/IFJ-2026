@@ -26,9 +26,30 @@ void print_literal(ast_node_t *node){
                     }
                 }
             break;
+        default:
+            break; 
         //case TYPE_BOOL v pripade rozsireni BOOLTHEN
         }
 }
+
+void print_var(ast_node_t *node){
+
+    switch (node->data.variable.frame){
+        case LOCAL:
+            printf("LF@%s\n", node->data.variable.name);
+            break;
+        case GLOBAL:
+            printf("GF@%s\n", node->data.variable.name);
+            break;
+        case TMP:
+            printf("TF@%s\n", node->data.variable.name);
+            break;
+        default:
+            break;
+        }
+
+}
+
 
 void ast_literal(ast_node_t *node){
     printf("PUSHS ");
@@ -38,17 +59,9 @@ void ast_literal(ast_node_t *node){
 
 void ast_var_def(ast_node_t *node){
 
-    switch (node->data.variable.frame){
-        case LOCAL:
-            printf("DEFVAR LF@%s\n", node->data.variable.name);
-            break;
-        case GLOBAL:
-            printf("DEFVAR GF@%s\n", node->data.variable.name);
-            break;
-        case TMP:
-            printf("DEFVAR TF@%s\n", node->data.variable.name);
-            break;
-        }
+    printf("DEFVAR ");
+    print_var(node);
+    printf("\n");
 
 }
 
@@ -74,6 +87,8 @@ void ast_binop(ast_node_t *node){
                 printf("DIVS\n");
             }
             break;
+        default:
+            break;
         
     }
 }
@@ -90,6 +105,8 @@ void ast_var(ast_node_t *node){
             break;
         case TMP:
             printf("PUSHS TF@%s\n", node->data.variable.name);
+            break;
+        default:
             break;
         }
 
@@ -120,9 +137,12 @@ void case_print(ast_node_t *node){
         switch (node->data.func.args->type){
             case AST_LITERAL:
                 print_literal(node->data.func.args);
-
+                break;
             case AST_VAR:
-                
+                print_var(node->data.func.args);
+                break;
+            default:
+                break;
 
     }
 }
