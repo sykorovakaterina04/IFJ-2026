@@ -121,7 +121,19 @@ void ast_binop(ast_node_t *node){
 //do promenne se prirazuje hodnota
 void ast_assign(ast_node_t *node){
 
-    
+    printf("MOVE ");
+    print_var(node->data.assign.dest);
+    switch (node->data.assign.source->type){
+        case AST_VAR:
+            print_var(node->data.assign.source);
+            break;
+        case AST_LITERAL:
+            print_literal(node->data.assign.source);
+            break;
+        default:
+            break;
+    }
+    printf("\n");
 
 }
 
@@ -169,11 +181,11 @@ void projdi_strom(ast_node_t *node){
         case AST_CALL:
                 ast_call(node);
             break;
+        case AST_ASSIGN:
+                ast_assign(node);
+            break;
         case AST_FUNC_DEF:
             //WIP3
-            break;
-        case AST_ASSIGN:
-            //WIP2
             break;
         case AST_IF:
             //WIP4
