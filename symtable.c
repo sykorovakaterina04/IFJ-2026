@@ -76,7 +76,7 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
                                             bool modifiable, int line, type_t return_type){
 
     if(node == NULL){
-        tnode_t *new_node = malloc(sizeof(tnode_t));
+        tnode_t *new_node = calloc(1, sizeof(tnode_t));
         if ((new_node == NULL)){
             fprintf(stderr, "%s", "chyba pri alokaci noveho elementu");
             exit(99);
@@ -87,8 +87,6 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
         new_node->data.type = type;
         new_node->data.modifiable = modifiable;
         new_node->data.line = line;
-        new_node->left = NULL;
-        new_node->right = NULL;
 
         return(new_node);
     }
