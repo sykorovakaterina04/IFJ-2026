@@ -28,6 +28,11 @@ struct ast_node{
 
     union {
         struct{
+            ast_node_t *dest;
+            ast_node_t *source;
+        }assign;
+        
+        struct{
             ast_node_t *left;
             ast_node_t *right;
             char op;
