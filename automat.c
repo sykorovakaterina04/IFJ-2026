@@ -1,12 +1,8 @@
 #include "automat.h"
 #include <ctype.h>
 
-#define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 #define INITIAL_STRING_CAPACITY 16
-
-static int current_line = 1;
-static int current_col = 0;
-static int prev_col = 0;
+#define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
 typedef enum {
 	KA_START,
@@ -46,6 +42,25 @@ typedef enum {
 	KA_DOUBLE_EXP_UNDERSCORE
 } ka_states;
 
+typedef struct {
+	const char *keyword;
+	token_type_t type;
+} keyword_entry_t;
+
+static const keyword_entry_t keywords[] = {
+	{"def", KEYWORD_DEF},		{"do", KEYWORD_DO},
+	{"Double", KEYWORD_DOUBLE}, {"else", KEYWORD_ELSE},
+	{"if", KEYWORD_IF},			{"import", KEYWORD_IMPORT},
+	{"Int", KEYWORD_INT},		{"return", KEYWORD_RETURN},
+	{"String", KEYWORD_STRING}, {"then", KEYWORD_THEN},
+	{"Unit", KEYWORD_UNIT},		{"val", KEYWORD_VAL},
+	{"var", KEYWORD_VAR},		{"while", KEYWORD_WHILE},
+};
+
+static int current_line = 1;
+static int current_col = 0;
+static int prev_col = 0;
+
 int str_init(string_t *s) {
 	s->capacity = INITIAL_STRING_CAPACITY;
 	s->data = (char *)malloc(s->capacity * sizeof(char));
@@ -83,21 +98,6 @@ void str_free(string_t *s) {
 	s->length = 0;
 	s->capacity = 0;
 }
-
-typedef struct {
-	const char *keyword;
-	token_type_t type;
-} keyword_entry_t;
-
-static const keyword_entry_t keywords[] = {
-	{"def", KEYWORD_DEF},		{"do", KEYWORD_DO},
-	{"Double", KEYWORD_DOUBLE}, {"else", KEYWORD_ELSE},
-	{"if", KEYWORD_IF},			{"import", KEYWORD_IMPORT},
-	{"Int", KEYWORD_INT},		{"return", KEYWORD_RETURN},
-	{"String", KEYWORD_STRING}, {"then", KEYWORD_THEN},
-	{"Unit", KEYWORD_UNIT},		{"val", KEYWORD_VAL},
-	{"var", KEYWORD_VAR},		{"while", KEYWORD_WHILE},
-};
 
 token_type_t keyword_type(const char *str) {
 	for (size_t i = 0; i < KEYWORDS_COUNT; i++) {
