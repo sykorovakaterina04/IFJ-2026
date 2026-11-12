@@ -73,10 +73,10 @@ static int symtable_getbalance(tnode_t *node){
 }
 
 static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, 
-                                            bool modifiable, int line, type_t return_type){
+                                            bool modifiable, int line){
 
     if(node == NULL){
-        tnode_t *new_node = malloc(sizeof(tnode_t));
+        tnode_t *new_node = calloc(1, sizeof(tnode_t));
         if ((new_node == NULL)){
             fprintf(stderr, "%s", "chyba pri alokaci noveho elementu");
             exit(99);
@@ -87,17 +87,15 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
         new_node->data.type = type;
         new_node->data.modifiable = modifiable;
         new_node->data.line = line;
-        new_node->left = NULL;
-        new_node->right = NULL;
 
         return(new_node);
     }
     
 
     if (strcmp(key, node->key) < 0){
-        node->left = symtable_insert_recursive(node->left, key, type, modifiable, line, return_type);
+        node->left = symtable_insert_recursive(node->left, key, type, modifiable, line);
     } else if(strcmp(key, node->key) > 0) {
-        node->right = symtable_insert_recursive(node->right, key, type, modifiable, line, return_type);
+        node->right = symtable_insert_recursive(node->right, key, type, modifiable, line);
     } else{
         return node;
     }
@@ -129,7 +127,7 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
     return node;
 }
 
-int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int line, type_t return_type){
+int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int line){
 
     if (tree == NULL || key == NULL){
         fprintf(stderr, "%s", "spatne zadane paramery");
@@ -138,7 +136,7 @@ int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int l
 
     
 
-    tree->root = symtable_insert_recursive(tree->root, key, type, modifiable, line, return_type);
+    tree->root = symtable_insert_recursive(tree->root, key, type, modifiable, line);
 
     return 0;
 }
