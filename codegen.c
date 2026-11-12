@@ -50,6 +50,21 @@ void print_var(ast_node_t *node){
 
 }
 
+void case_print(ast_node_t *node){
+
+    printf("WRITE ");
+        switch (node->data.func.args->type){
+            case AST_LITERAL:
+                print_literal(node->data.func.args);
+                break;
+            case AST_VAR:
+                print_var(node->data.func.args);
+                break;
+            default:
+                break;
+
+    }
+}
 
 void ast_literal(ast_node_t *node){
     printf("PUSHS ");
@@ -62,6 +77,15 @@ void ast_var_def(ast_node_t *node){
     printf("DEFVAR ");
     print_var(node);
     printf("\n");
+
+}
+
+//promnnena je pouzita (napr jako parametr)
+void ast_var(ast_node_t *node){
+
+      printf("PUSHS ");
+      print_var(node);
+      printf("\n");
 
 }
 
@@ -93,24 +117,6 @@ void ast_binop(ast_node_t *node){
     }
 }
 
-//promnnena je pouzita (napr jako parametr)
-void ast_var(ast_node_t *node){
-
-      switch (node->data.variable.frame){
-        case LOCAL:
-            printf("PUSHS LF@%s\n", node->data.variable.name);
-            break;
-        case GLOBAL:
-            printf("PUSHS GF@%s\n", node->data.variable.name);
-            break;
-        case TMP:
-            printf("PUSHS TF@%s\n", node->data.variable.name);
-            break;
-        default:
-            break;
-        }
-
-}
 
 //do promenne se prirazuje hodnota
 void ast_assign(ast_node_t *node){
@@ -119,6 +125,7 @@ void ast_assign(ast_node_t *node){
 
 }
 
+/*
 void ast_func_def(ast_node_t *node){
 
 
@@ -130,36 +137,16 @@ void ast_if(ast_node_t *node){
 
 
 }
-
-void case_print(ast_node_t *node){
-
-    printf("WRITE ");
-        switch (node->data.func.args->type){
-            case AST_LITERAL:
-                print_literal(node->data.func.args);
-                break;
-            case AST_VAR:
-                print_var(node->data.func.args);
-                break;
-            default:
-                break;
-
-    }
-}
+*/
 
 void ast_call(ast_node_t *node){
 
     if(node->data.func.name == "print"){
             case_print(node);
-
         }
         
 }
-          
-
-
-
-
+        
 
 void projdi_strom(ast_node_t *node){
 
@@ -179,6 +166,9 @@ void projdi_strom(ast_node_t *node){
         case AST_VAR:
                 ast_var(node);//WIP1
             break;
+        case AST_CALL:
+                ast_call(node);
+            break;
         case AST_FUNC_DEF:
             //WIP3
             break;
@@ -189,9 +179,6 @@ void projdi_strom(ast_node_t *node){
             //WIP4
             break;
         case AST_WHILE:
-            //TODO
-            break;
-        case AST_CALL:
             //TODO
             break;
         case AST_BLOCK:
