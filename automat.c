@@ -448,14 +448,33 @@ token_t automat(FILE *fptr) {
 			} else {
 				ungetc(c, fptr);
 				token.type = TOKEN_STRING;
-				token.str_val = buffer.data;
+
+				token.str_val =
+					(char *)malloc((buffer.length + 1) * sizeof(char));
+				if (token.str_val == NULL) {
+					str_free(&buffer);
+					fprintf(stderr, "Chyba: neuspesny malloc!\n");
+					exit(99);
+				}
+				strcpy(token.str_val, buffer.data);
+
+				str_free(&buffer);
 				return token;
 			}
 			break;
 		case KA_STRING_BODY:
 			if (c == '"') {
 				token.type = TOKEN_STRING;
-				token.str_val = buffer.data;
+				token.str_val =
+					(char *)malloc((buffer.length + 1) * sizeof(char));
+				if (token.str_val == NULL) {
+					str_free(&buffer);
+					fprintf(stderr, "Chyba: neuspesny malloc!\n");
+					exit(99);
+				}
+				strcpy(token.str_val, buffer.data);
+
+				str_free(&buffer);
 				return token;
 			} else if (c == '\\') {
 				state = KA_STRING_ESCAPE;
@@ -515,7 +534,17 @@ token_t automat(FILE *fptr) {
 		case KA_MULTILINE_STRING_END_2:
 			if (c == '"') {
 				token.type = TOKEN_STRING;
-				token.str_val = buffer.data;
+
+				token.str_val =
+					(char *)malloc((buffer.length + 1) * sizeof(char));
+				if (token.str_val == NULL) {
+					str_free(&buffer);
+					fprintf(stderr, "Chyba: neuspesny malloc!\n");
+					exit(99);
+				}
+				strcpy(token.str_val, buffer.data);
+
+				str_free(&buffer);
 				return token;
 			} else if (c == EOF) {
 				fprintf(stderr,
