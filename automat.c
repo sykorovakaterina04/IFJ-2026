@@ -2,6 +2,7 @@
 #include <ctype.h>
 
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
+#define INITIAL_STRING_CAPACITY 16
 
 static int current_line = 1;
 static int current_col = 0;
@@ -46,7 +47,7 @@ typedef enum {
 } ka_states;
 
 int str_init(string_t *s) {
-	s->capacity = 16;
+	s->capacity = INITIAL_STRING_CAPACITY;
 	s->data = (char *)malloc(s->capacity * sizeof(char));
 	if (s->data == NULL) {
 		fprintf(stderr, "Chyba: neuspesny malloc!\n");
