@@ -3,6 +3,10 @@
 
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
+static int current_line = 1;
+static int current_col = 0;
+static int prev_col = 0;
+
 typedef enum {
 	KA_START,
 	KA_GREATER,
@@ -110,6 +114,30 @@ token_type_t keyword_type(const char *str) {
 	return TOKEN_IDENTIFIER;
 }
 
+int my_fgetc(FILE *fptr) {
+	int c = fgetc(fptr);
+	if (c == '\n') {
+		current_line++;
+		prev_col = current_col;
+		current_col = 0;
+	} else if (c == EOF) {
+		return c;
+	} else {
+		current_col++;
+	}
+	return c;
+}
+
+void my_ungetc(int c, FILE *fptr) {
+	ungetc(c, fptr);
+	if (c == '\n') {
+		current_line--;
+		current_col = prev_col;
+	} else {
+		current_col--;
+	}
+}
+
 token_t automat(FILE *fptr) {
 
 	string_t buffer;
@@ -119,27 +147,37 @@ token_t automat(FILE *fptr) {
 	int c;
 	int comment_nesting = 0;
 	int comment_has_nl = 0;
+	int token_start_line = 0;
+	int token_start_col = 0;
 
 	while (1) {
-		c = fgetc(fptr);
+		c = my_fgetc(fptr);
 		switch (state) {
 		case KA_START:
 			if (c == EOF) {
 				token.type = TOKEN_EOF;
 				token.str_val = NULL;
+				token.line = current_line;
+				token.col = current_col;
 				return token;
 			}
 			if (isspace(c)) {
 				continue; // preskoceni bilych znaku
 			}
+			token_start_line = current_line;
+			token_start_col = current_col;
 			if (c == '+') {
 				token.type = TOKEN_ADD;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == '*') {
 				token.type = TOKEN_MUL;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == '/') {
@@ -149,6 +187,8 @@ token_t automat(FILE *fptr) {
 			if (c == '-') {
 				token.type = TOKEN_SUB;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == '>') {
@@ -170,31 +210,43 @@ token_t automat(FILE *fptr) {
 			if (c == '(') {
 				token.type = TOKEN_LPAREN;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == ')') {
 				token.type = TOKEN_RPAREN;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == ':') {
 				token.type = TOKEN_COLON;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == ',') {
 				token.type = TOKEN_COMMA;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == ';') {
 				token.type = TOKEN_SEMICOLON;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == '.') {
 				token.type = TOKEN_DOT;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			if (c == '@') {
@@ -230,12 +282,16 @@ token_t automat(FILE *fptr) {
 			if (c == '=') {
 				token.type = TOKEN_LESS_EQUAL;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 
 				token.type = TOKEN_LESS;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -243,12 +299,16 @@ token_t automat(FILE *fptr) {
 			if (c == '=') {
 				token.type = TOKEN_GREATER_EQUAL;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 
 				token.type = TOKEN_GREATER;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -256,12 +316,16 @@ token_t automat(FILE *fptr) {
 			if (c == '=') {
 				token.type = TOKEN_EQ;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 
 				token.type = TOKEN_ASSIGN;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -269,6 +333,8 @@ token_t automat(FILE *fptr) {
 			if (c == '=') {
 				token.type = TOKEN_NEQ;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			} else {
 				fprintf(stderr, "Lexikalni chyba: neplatny znak za '!'\n");
@@ -279,7 +345,7 @@ token_t automat(FILE *fptr) {
 			if (isalnum(c) || c == '_') {
 				str_add_char(&buffer, c);
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.type = keyword_type(buffer.data);
 				if (token.type == TOKEN_IDENTIFIER) {
 					token.str_val =
@@ -294,6 +360,8 @@ token_t automat(FILE *fptr) {
 					token.str_val = NULL;
 				}
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -327,8 +395,10 @@ token_t automat(FILE *fptr) {
 			break;
 		case KA_AT_MAIN_END:
 			if (!(isalnum(c)) && c != '_') {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.type = TOKEN_AT_MAIN;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			} else {
 				exit(1);
@@ -344,17 +414,19 @@ token_t automat(FILE *fptr) {
 				state = KA_BLOCK_COMMENT;
 				break;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 
 				token.type = TOKEN_DIV;
 				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 		case KA_LINE_COMMENT:
 			if (c == '\n') {
 				state = KA_START;
 			} else if (c == EOF) {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				state = KA_START;
 			}
 			break;
@@ -418,7 +490,7 @@ token_t automat(FILE *fptr) {
 				state = KA_START;
 				break;
 			} else if (c == EOF) {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				state = KA_START;
 				break;
 			} else {
@@ -446,7 +518,7 @@ token_t automat(FILE *fptr) {
 			if (c == '"') {
 				state = KA_MULTILINE_STRING;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.type = TOKEN_STRING;
 
 				token.str_val =
@@ -459,6 +531,8 @@ token_t automat(FILE *fptr) {
 				strcpy(token.str_val, buffer.data);
 
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -475,6 +549,8 @@ token_t automat(FILE *fptr) {
 				strcpy(token.str_val, buffer.data);
 
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			} else if (c == '\\') {
 				state = KA_STRING_ESCAPE;
@@ -545,6 +621,8 @@ token_t automat(FILE *fptr) {
 				strcpy(token.str_val, buffer.data);
 
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			} else if (c == EOF) {
 				fprintf(stderr,
@@ -571,10 +649,12 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 				state = KA_DOUBLE_EXP;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.type = TOKEN_INT;
 				token.int_val = 0;
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -591,10 +671,12 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 				state = KA_DOUBLE_EXP;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.type = TOKEN_INT;
 				token.int_val = strtoll(buffer.data, NULL, 10);
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -629,10 +711,12 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 				state = KA_DOUBLE_EXP;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.double_val = strtod(buffer.data, NULL);
 				token.type = TOKEN_DOUBLE;
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -652,10 +736,12 @@ token_t automat(FILE *fptr) {
 						"Lexikalni chyba: Neplatny znak za sufixem 'd'/'D'\n");
 				exit(1);
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.double_val = strtod(buffer.data, NULL);
 				token.type = TOKEN_DOUBLE;
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -690,10 +776,12 @@ token_t automat(FILE *fptr) {
 			} else if (c == 'd' || c == 'D') {
 				state = KA_DOUBLE_SUFFIX;
 			} else {
-				ungetc(c, fptr);
+				my_ungetc(c, fptr);
 				token.double_val = strtod(buffer.data, NULL);
 				token.type = TOKEN_DOUBLE;
 				str_free(&buffer);
+				token.line = token_start_line;
+				token.col = token_start_col;
 				return token;
 			}
 			break;
@@ -711,5 +799,7 @@ token_t automat(FILE *fptr) {
 
 	token.type = TOKEN_EOF;
 	token.str_val = NULL;
+	token.line = token_start_line;
+	token.col = token_start_col;
 	return token;
 }
