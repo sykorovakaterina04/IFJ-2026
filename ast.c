@@ -19,16 +19,14 @@ ast_node_t *ast_create_node(ast_type_t type){
     return new_node;
 }
 
-ast_node_t *ast_make_binop(int op, ast_node_t *left, ast_node_t *right){
-    ast_node_t *new_node = ast_create_node(AST_BINOP);
+ast_node_t *ast_create_binop(int op, ast_node_t *left, ast_node_t *right){
+    ast_node_t *binop = ast_create_node(AST_BINOP);
 
-    new_node->data.binop.left = left;
-    new_node->data.binop.right = right;
-    new_node->data.binop.op = op;
-
-    return new_node;
+    binop->data.binop.op = op;
+    binop->data.binop.left = left;
+    binop->data.binop.right = right;
 }
 
-ast_node_t *ast_make_var(char* indetifier){
-    ast_node_t *new_node = ast_create_node(AST_VAR);
+ast_node_t *ast_create_assign(ast_node_t *left, ast_node_t *right){
+    
 }
