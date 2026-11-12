@@ -130,7 +130,9 @@ void my_ungetc(int c, FILE *fptr) {
 		current_line--;
 		current_col = prev_col;
 	} else {
-		current_col--;
+		if (current_col > 0) {
+			current_col--;
+		}
 	}
 }
 
