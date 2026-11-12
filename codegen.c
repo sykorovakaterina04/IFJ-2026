@@ -1,16 +1,17 @@
 #include "codegen.h"
 #include <stdio.h>
 
-void ast_literal(ast_node_t *node){
+
+void print_literal(ast_node_t *node){
     switch (node->return_type){
         case INT:
-            printf("PUSHS int@%d\n", node->data.literal.i_val);
+            printf("int@%d", node->data.literal.i_val);
             break;
         case DOUBLE:
-            printf("PUSHS float@%a\n", node->data.literal.d_val);
+            printf("float@%a", node->data.literal.d_val);
             break;
         case STRING:
-            printf("PUSHS string@"); //TODO: poresit uprava prebraneho stringu pro pravidla IFJcode26
+            printf("string@"); //TODO: poresit uprava prebraneho stringu pro pravidla IFJcode26
                 for(int i = 0; i < strlen(node->data.literal.string_val); i++){
                     if(node->data.literal.string_val[i] == 32){
                         printf("\\032");
@@ -24,10 +25,15 @@ void ast_literal(ast_node_t *node){
                         printf("%c",node->data.literal.string_val[i]);
                     }
                 }
-            printf("\n");
             break;
         //case TYPE_BOOL v pripade rozsireni BOOLTHEN
         }
+}
+
+void ast_literal(ast_node_t *node){
+    printf("PUSHS ");
+    print_literal(node);
+    printf("\n");
 }
 
 void ast_var_def(ast_node_t *node){
@@ -75,10 +81,22 @@ void ast_binop(ast_node_t *node){
 //promnnena je pouzita (napr jako parametr)
 void ast_var(ast_node_t *node){
 
+      switch (node->data.variable.frame){
+        case LOCAL:
+            printf("PUSHS LF@%s\n", node->data.variable.name);
+            break;
+        case GLOBAL:
+            printf("PUSHS GF@%s\n", node->data.variable.name);
+            break;
+        case TMP:
+            printf("PUSHS TF@%s\n", node->data.variable.name);
+            break;
+        }
+
 }
 
 //do promenne se prirazuje hodnota
-void ast_assing(ast_node_t *node){
+void ast_assign(ast_node_t *node){
 
     
 
@@ -87,11 +105,41 @@ void ast_assing(ast_node_t *node){
 void ast_func_def(ast_node_t *node){
 
 
+
 }
 
 void ast_if(ast_node_t *node){
 
+
+
 }
+
+void case_print(ast_node_t *node){
+
+    printf("WRITE ");
+        switch (node->data.func.args->type){
+            case AST_LITERAL:
+                print_literal(node->data.func.args);
+
+            case AST_VAR:
+                
+
+    }
+}
+
+void ast_call(ast_node_t *node){
+
+    if(node->data.func.name == "print"){
+            case_print(node);
+
+        }
+        
+}
+          
+
+
+
+
 
 void projdi_strom(ast_node_t *node){
 
