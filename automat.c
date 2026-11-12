@@ -60,6 +60,8 @@ static const keyword_entry_t keywords[] = {
 static int current_line = 1;
 static int current_col = 0;
 static int prev_col = 0;
+static int tab_seen = 0;
+static int at_line_start = 1;
 
 int str_init(string_t *s) {
 	s->capacity = INITIAL_STRING_CAPACITY;
@@ -156,6 +158,9 @@ token_t automat(FILE *fptr) {
 				return token;
 			}
 			if (c == '\n') {
+				at_line_start = 1;
+				tab_seen = 0;
+
 				token.type = TOKEN_EOL;
 				token.str_val = NULL;
 				token.line = current_line - 1;
@@ -163,8 +168,19 @@ token_t automat(FILE *fptr) {
 				return token;
 			}
 			if (isspace(c)) {
+				if (at_line_start == 1) {
+					if (c == '\t') {
+						tab_seen = 1;
+					}
+				}
 				continue; // preskoceni bilych znaku
 			}
+			if (at_line_start == 1 && tab_seen == 1) {
+				fprintf(stderr,
+						"Lexikalni chyba: Tabulator na neprazdnem radku\n");
+				exit(1);
+			}
+			at_line_start = 0;
 			token_start_line = current_line;
 			token_start_col = current_col;
 			if (c == '+') {
