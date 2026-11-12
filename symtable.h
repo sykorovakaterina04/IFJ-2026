@@ -7,16 +7,16 @@
 typedef enum {TYPE_INT, TYPE_DOUBLE, TYPE_STRING, TYPE_UNIT} type_t;
 
 typedef struct tdata{
-    
+    bool is_function;
     type_t type;
-
     bool modifiable;
-
     int line;
+    int param_count;
+    type_t param_types;
 }tdata_t;
 
 typedef struct tnode{
-    char* key;                              
+    char* key;
     tdata_t data;
     struct tnode *left;
     struct tnode *right;
@@ -30,7 +30,7 @@ typedef struct tree{
 
 tree_t *symtable_init();
 
-int symtable_insert(tree_t *tree, char *key, type_t type, bool modifiable, int line);
+int symtable_insert(tree_t *tree, char *key, type_t type, bool modifiable, int line, type_t return_type);
 
 tdata_t *symtable_lookup(const tree_t *tree, char *key);
 
