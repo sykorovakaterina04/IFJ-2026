@@ -4,7 +4,7 @@
 typedef enum {
     AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
     AST_IF, AST_WHILE, AST_CALL, 
-    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK
+    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK, AST_PRINT
 } ast_type_t;
 
 typedef enum {
@@ -15,31 +15,38 @@ typedef enum {
     INT, STRING, DOUBLE
 } var_type_t;
 
-typedef struct ast_node{
+typedef struct ast_node ast_node_t;
+
+struct ast_node{
     ast_type_t type;
     type_t return_type;
 
-    struct ast_node *next;
+    ast_node_t *next;
     
 
     int line;
 
     union {
         struct{
-            struct ast_node *left;
-            struct ast_node *right;
+            ast_node_t *dest;
+            ast_node_t *source;
+        }assign;
+        
+        struct{
+            ast_node_t *left;
+            ast_node_t *right;
             char op;
         }binop;
 
         struct{
-            struct ast_node *cond;
-            struct ast_node *body;
-            struct ast_node *else_body;
+            ast_node_t *cond;
+            ast_node_t *body;
+            ast_node_t *else_body;
         }condicionals;
 
         struct{
             char *name;
-            struct ast_node *args;
+            ast_node_t *args;
         }func;
 
         struct {
@@ -50,10 +57,17 @@ typedef struct ast_node{
 
         struct {
             char *name;
+            var_type_t type;
+            var_type_t conversion_type;
             frame_t frame;
         }variable;
+
+        struct { 
+            ast_node_t *first_line;
+        } block;
+
     }data;
-}ast_node_t;
+};
 
 typedef struct ast_tree{
     ast_node_t *root;
