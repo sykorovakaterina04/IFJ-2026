@@ -155,6 +155,13 @@ token_t automat(FILE *fptr) {
 				token.col = current_col;
 				return token;
 			}
+			if (c == '\n') {
+				token.type = TOKEN_EOL;
+				token.str_val = NULL;
+				token.line = current_line - 1;
+				token.col = prev_col;
+				return token;
+			}
 			if (isspace(c)) {
 				continue; // preskoceni bilych znaku
 			}
