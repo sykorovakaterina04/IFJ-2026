@@ -33,7 +33,7 @@ typedef enum {
 	TOKEN_COMMA,
 	TOKEN_SEMICOLON,
 	TOKEN_DOT,
-	TOKEN_AT,
+	TOKEN_AT_MAIN,
 
 	// klicova slova
 	KEYWORD_DEF,
@@ -61,7 +61,7 @@ typedef enum {
 	KEYWORD_MATCH,
 	KEYWORD_TYPE,
 
-} token_type;
+} token_type_t;
 
 typedef struct {
 	char *data;
@@ -69,25 +69,21 @@ typedef struct {
 	int capacity;
 } string_t;
 
-typedef struct token token_t;
-
-struct token {
-	token_type type;
+typedef struct {
+	token_type_t type;
 	int line;
 	int col;
 	union {
-		long int_val;
+		long long int_val;
 		double double_val;
 		char *str_val;
 	};
-};
+} token_t;
 
 token_t automat(FILE *fptr);
 
 int str_init(string_t *s);
 
 int str_add_char(string_t *s, char c);
-
-void str_clear(string_t *s);
 
 void str_free(string_t *s);
