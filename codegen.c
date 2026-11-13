@@ -1,6 +1,4 @@
 #include "codegen.h"
-#include <stdio.h>
-
 
 void print_literal(ast_node_t *node){
     switch (node->return_type){
@@ -12,7 +10,7 @@ void print_literal(ast_node_t *node){
             break;
         case STRING:
             printf("string@"); //TODO: poresit uprava prebraneho stringu pro pravidla IFJcode26
-                for(int i = 0; i < strlen(node->data.literal.string_val); i++){
+                for(int i = 0; node->data.literal.string_val[i] != '\0'; i++){
                     if(node->data.literal.string_val[i] == 32){
                         printf("\\032");
                     } else if (node->data.literal.string_val[i] == 92){
@@ -36,13 +34,13 @@ void print_var(ast_node_t *node){
 
     switch (node->data.variable.frame){
         case LOCAL:
-            printf("LF@%s\n", node->data.variable.name);
+            printf("LF@%s", node->data.variable.name);
             break;
         case GLOBAL:
-            printf("GF@%s\n", node->data.variable.name);
+            printf("GF@%s", node->data.variable.name);
             break;
         case TMP:
-            printf("TF@%s\n", node->data.variable.name);
+            printf("TF@%s", node->data.variable.name);
             break;
         default:
             break;
@@ -137,14 +135,29 @@ void ast_assign(ast_node_t *node){
 
 }
 
-/*
+
 void ast_func_def(ast_node_t *node){
 
 
 
 }
 
+/*
+
 void ast_if(ast_node_t *node){
+
+
+
+}
+
+void ast_while(ast_node_t *node){
+
+
+
+}
+
+
+void ast_block(ast_node_t *node){
 
 
 
@@ -153,10 +166,14 @@ void ast_if(ast_node_t *node){
 
 void ast_call(ast_node_t *node){
 
-    if(node->data.func.name == "print"){
+    if (strcmp(node->data.func.name, "print") == 0){
             case_print(node);
-        }
-        
+    } else {
+        printf("CALL ");
+        printf("%s", node->data.func.name);
+        printf("\n");
+    }
+    
 }
         
 
@@ -199,6 +216,7 @@ void projdi_strom(ast_node_t *node){
         default:
             break;
     }
+    node = node->next;
 
 
 }
