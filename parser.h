@@ -3,7 +3,7 @@
 
 #include "automat.h"
 #include "symtable.h"
-
+#include "stdbool.h"
 
 // zasobnik urovni odsazeni
 typedef struct {
@@ -29,4 +29,4 @@ int register_functions(tree_t *global_symtable);
 //bloky 
 int parse_block(tree_t *global_symtable,tree_t *local_symtable, indent_stack_t *indent_stack)
 
-#endif  
+#endif

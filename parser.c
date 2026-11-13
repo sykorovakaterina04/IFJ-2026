@@ -1,3 +1,5 @@
+
+
 #include "parser.h"
 #include "automat.h"
 #include "symtable.h"
@@ -5,10 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-
-
 token_t current_token;
-
 
 token_t get_token(){
     // Zavolani pro dalsi token
@@ -19,6 +18,7 @@ token_t get_token(){
 }
 
 void next(){
+    free_token(&current_token);
     current_token = get_token();
 }
 
@@ -100,7 +100,9 @@ int parse() {
             
             case TOKEN_AT_MAIN:
                 next();         
-                
+                while (current_token.type == TOKEN_EOL){ 
+                    next(); 
+                }
                 if(current_token.type != KEYWORD_DEF){
                     symtable_destroy_tree(global_symtable); // uklid
                     return 2; // CHYBA 
@@ -132,36 +134,45 @@ int parse() {
     }
 
     symtable_destroy_tree(global_symtable); // uklid
+    free_token(&current_token);
     return 0; // 
 }
 
-int parse_function(tree_t *global_symtable) {
-    
-    next(); //z def na další token
-
-    // název funkce (identifikátor)
-    if (current_token.type != TOKEN_IDENTIFIER) {
-        return 2; // CHYBA // Syntaktická chyba
+static void free_token(token_t *tok){
+    if ((tok->type == TOKEN_IDENTIFIER || tok->type == TOKEN_STRING) && tok->str_val != NULL) {
+        free(tok->str_val);
+        tok->str_val = NULL;
     }
+}
 
-    tree_t *local_symtable = symtable_init();
-    if (local_symtable == NULL) {
-        return 99; // Interní chyba alokace
+//nacitani datoveho typu
+static int parse_type(type_t *out_type){
+    switch (current_token.type)
+    {
+    case KEYWORD_INT:  // podle typu mezi zavorkama si to vratim zrovna
+        *out_type = TYPE_INT;
+        next();
+        return 0;
+    case KEYWORD_DOUBLE:
+        *out_type = TYPE_DOUBLE;
+        next();
+        return 0;
+    case KEYWORD_STRING:
+        *out_type = TYPE_STRING;
+        next();
+        return 0;                   
+    case KEYWORD_UNIT:
+        *out_type = TYPE_UNIT;
+        next();
+        return 0;
+    case KEYWORD_BOOLEAN:
+        return 2; // ROZSIRENI AZ
+    case TOKEN_IDENTIFIER:
+        return 3; // neznamu typ
+
+    default:
+        return 2; // chyba
     }
-
-    
-    
-    if(symtable_lookup(global_symtable,current_token.str_val) == NULL){
-        if(symtable_insert(global_symtable,current_token.str_val,TYPE_STRING,false,current_token.line) !=0){
-            return 99;
-        }
-    }else{
-        symtable_destroy_tree(local_symtable);
-        return  4;
-    }
-
-    symtable_destroy_tree(local_symtable);
-    return 0; 
 }
 
 int parse_main(tree_t *global_symtable){
@@ -181,8 +192,7 @@ int parse_main(tree_t *global_symtable){
 
     next();
     if(current_token.type != TOKEN_LPAREN){
-        
-
+    
         return 2;
     }
     next();
@@ -220,6 +230,45 @@ int parse_main(tree_t *global_symtable){
         return 99; // Interní chyba alokace
     }
     
+
+    symtable_destroy_tree(local_symtable);
+    return 0; 
+}
+
+int parse_function(tree_t *global_symtable) {
+    
+    next(); //z def na další token
+
+    // název funkce (identifikátor)
+    if (current_token.type != TOKEN_IDENTIFIER) {
+        return 2; // CHYBA // Syntaktická chyba
+    }
+
+    next();
+    if(current_token.type != TOKEN_LPAREN){
+    
+        return 2;
+    }
+
+    next();
+
+    
+    tree_t *local_symtable = symtable_init();
+    if (local_symtable == NULL) {
+        return 99; // Interní chyba alokace
+    }
+
+    
+    
+    if(symtable_lookup(global_symtable,current_token.str_val) == NULL){
+        if(symtable_insert(global_symtable,current_token.str_val,TYPE_STRING,false,current_token.line) !=0){
+            symtable_destroy_tree(local_symtable);
+            return 99;
+        }
+    }else{
+        symtable_destroy_tree(local_symtable);
+        return  4;
+    }
 
     symtable_destroy_tree(local_symtable);
     return 0; 

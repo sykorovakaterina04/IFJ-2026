@@ -35,5 +35,3 @@ int symtable_insert(tree_t *tree, char *key, type_t type, bool modifiable, int l
 tdata_t *symtable_lookup(const tree_t *tree, char *key);
 
 void symtable_destroy_tree(tree_t *tree);
-
-
