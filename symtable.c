@@ -18,7 +18,7 @@ static int symtable_max(int a, int b){
     return (a > b) ? a : b;
 }
 
-tdata_t * symtable_lookup(const tree_t *tree, char* key){
+tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
     if(tree == NULL){
         fprintf(stderr, "%s", "predany strom byl nulovy");
@@ -72,7 +72,7 @@ static int symtable_getbalance(tnode_t *node){
     symtable_getheight(node->left) - symtable_getheight(node->right);
 }
 
-static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type, 
+static tnode_t *symtable_insert_recursive(tnode_t *node, const char *key, type_t type, 
                                             bool modifiable, int line){
 
     if(node == NULL){
@@ -127,7 +127,7 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, char* key, type_t type,
     return node;
 }
 
-int symtable_insert(tree_t *tree, char* key, type_t type, bool modifiable, int line){
+int symtable_insert(tree_t *tree, const char *key, type_t type, bool modifiable, int line){
 
     if (tree == NULL || key == NULL){
         fprintf(stderr, "%s", "spatne zadane paramery");
