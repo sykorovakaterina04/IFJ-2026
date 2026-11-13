@@ -1,11 +1,12 @@
 #include "symtable.h"
 
-tree_t *symtable_init(){
+tree_t *symtable_init(tree_t *parent){
     tree_t * tree = calloc(1, sizeof(tree_t));
     if(tree == NULL){
         fprintf(stderr, "%s", "chyba pri alokaci stromu");
         exit(99);
     }
+    tree->parent = parent;
     return tree;
 }
 
@@ -38,6 +39,10 @@ tdata_t * symtable_lookup(const tree_t *tree, const char *key){
         if (cmp == 0){
             return &(tmp->data);
         }
+    }
+
+    if(tree->parent != NULL){
+        symtable_lookup(tree->parent, key);
     }
     return NULL;
 }
@@ -72,8 +77,7 @@ static int symtable_getbalance(tnode_t *node){
     symtable_getheight(node->left) - symtable_getheight(node->right);
 }
 
-static tnode_t *symtable_insert_recursive(tnode_t *node, const char *key, type_t type, 
-                                            bool modifiable, int line){
+static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_type_t type, data_type_t data_type, int line, int param_count, data_type_t *param_types){
 
     if(node == NULL){
         tnode_t *new_node = calloc(1, sizeof(tnode_t));
@@ -82,20 +86,29 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, const char *key, type_t
             exit(99);
         }
         
-        new_node->key = key;
+        new_node->key = malloc(strlen(key) + 1);
+        if(new_node->key == NULL){
+            fprintf(stderr, "%s", "chyba pri alokaci noveho elementu");
+            exit(99);
+        }
+        strcpy(new_node->key, key);
+
         new_node->height = 1;
         new_node->data.type = type;
-        new_node->data.modifiable = modifiable;
+        new_node->data.data_type = data_type;
+        //if na modifiable
         new_node->data.line = line;
+        new_node->data.param_count = param_count;
+        new_node->data.param_types = param_types;
 
         return(new_node);
     }
     
 
     if (strcmp(key, node->key) < 0){
-        node->left = symtable_insert_recursive(node->left, key, type, modifiable, line);
+        node->left = symtable_insert_recursive(node->left, key, type, data_type, line, param_count, param_types);
     } else if(strcmp(key, node->key) > 0) {
-        node->right = symtable_insert_recursive(node->right, key, type, modifiable, line);
+        node->right = symtable_insert_recursive(node->right, key, type, data_type, line, param_count, param_types);
     } else{
         return node;
     }
@@ -127,16 +140,17 @@ static tnode_t *symtable_insert_recursive(tnode_t *node, const char *key, type_t
     return node;
 }
 
-int symtable_insert(tree_t *tree, const char *key, type_t type, bool modifiable, int line){
+int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data_type, int line, int param_count, data_type_t *param_types){
 
     if (tree == NULL || key == NULL){
         fprintf(stderr, "%s", "spatne zadane paramery");
         return 1;
     }
 
+
     
 
-    tree->root = symtable_insert_recursive(tree->root, key, type, modifiable, line);
+    tree->root = symtable_insert_recursive(tree->root, key, type, data_type, line, param_count, param_types);
 
     return 0;
 }
@@ -146,12 +160,17 @@ static void symtable_destroy(tnode_t *node){
         symtable_destroy(node->left);
         symtable_destroy(node->right);
         free(node->key);
+
+        if(node->data.type == FUNCTION && node->data.param_types != NULL){
+            free(node->data.param_types);
+        }
         free(node);
     }
 
 }
 
 void symtable_destroy_tree(tree_t *tree){
+    if (tree == NULL) return;
     symtable_destroy(tree->root);
     free(tree);
 
