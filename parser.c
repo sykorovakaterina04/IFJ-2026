@@ -1,14 +1,14 @@
-
-
 #include "parser.h"
 #include "automat.h"
 #include "symtable.h"
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 token_t current_token;
-
+static token_t ahead_token;
+static bool looked_ahead = false;
 token_t get_token(){
     // Zavolani pro dalsi token
 
@@ -17,8 +17,29 @@ token_t get_token(){
 
 }
 
-void next(){
+static void free_token(token_t *tok){
+    if ((tok->type == TOKEN_IDENTIFIER || tok->type == TOKEN_STRING) && tok->str_val != NULL) {
+        free(tok->str_val);
+        tok->str_val = NULL;
+    }
+}
+
+void peek_token(void){
+    if(!looked_ahead){
+        ahead_token = get_token(); 
+        looked_ahead = true;
+    }
+    return ahead_token;
+}
+
+void next(void){
     free_token(&current_token);
+    if(looked_ahead){
+        current_token = ahead_token;
+        looked_ahead = false;
+    }else{
+        current_token = get_token();
+    }
     current_token = get_token();
 }
 
@@ -61,7 +82,7 @@ int parse_prologue(){
     return 0;
 }
 
-int parse() {
+int parse(void) {
     int result;
     int main = 0;
     tree_t *global_symtable = symtable_init(NULL); // globalni tabulka pro funkce
@@ -72,11 +93,22 @@ int parse() {
         symtable_destroy_tree(global_symtable);
         return 99; 
     }
+
+
+    indent_stack_t indent_stack;
+    if (indent_init(&indent_stack) != 0) {
+        symtable_destroy_tree(global_symtable);
+        return 99;
+    }
+
+    current_token.type = TOKEN_EOF;
     //nacteni tokoenu
     next();
 
     result = parse_prologue();
     if (result != 0) {
+        indent_free(&indent_stack);
+        free_token(&current_token);
         symtable_destroy_tree(global_symtable); // uklid
         return 2; // CHYBA // Chyba v prologu
     }
@@ -88,6 +120,8 @@ int parse() {
                 // Začátek definice funkce
                 result = parse_function(global_symtable);
                 if (result != 0){
+                    indent_free(&indent_stack);
+                    free_token(&current_token);
                     symtable_destroy_tree(global_symtable); // uklid
                     return result; // CHYBA
                 } 
@@ -104,11 +138,15 @@ int parse() {
                     next(); 
                 }
                 if(current_token.type != KEYWORD_DEF){
+                    indent_free(&indent_stack);
+                    free_token(&current_token);
                     symtable_destroy_tree(global_symtable); // uklid
                     return 2; // CHYBA 
                 }
 
                 if(main) {
+                    indent_free(&indent_stack);
+                    free_token(&current_token);                   
                     symtable_destroy_tree(global_symtable); // uklid
                     return 4; // CHYBA vice mainu
                 }
@@ -116,6 +154,8 @@ int parse() {
 
                 result = parse_main(global_symtable);
                 if (result != 0) {
+                    indent_free(&indent_stack);
+                    free_token(&current_token);
                     symtable_destroy_tree(global_symtable); // uklid
                     return result; //CHYBA
                 }
@@ -124,25 +164,23 @@ int parse() {
 
             default:
                 // Neočekávaný token
+                indent_free(&indent_stack);
+                free_token(&current_token);
                 symtable_destroy_tree(global_symtable); // uklid
                 return 2; // CHYBA // Syntaktická chyba
         }
     }
+
+
+
     if(main != 1){
         symtable_destroy_tree(global_symtable); // uklid
         return 3; // CHYBA 
     }
-
+    indent_free(&indent_stack);
     symtable_destroy_tree(global_symtable); // uklid
     free_token(&current_token);
     return 0; // 
-}
-
-static void free_token(token_t *tok){
-    if ((tok->type == TOKEN_IDENTIFIER || tok->type == TOKEN_STRING) && tok->str_val != NULL) {
-        free(tok->str_val);
-        tok->str_val = NULL;
-    }
 }
 
 //nacitani datoveho typu
@@ -228,7 +266,7 @@ static int parse_params(tree_t *local_symtable, type_t **out_param_types, int *o
         type_t param_type;
 
         int type_res = parse_type(&param_type);
-        if(type_res == 0){
+        if(type_res != 0){
             free(*out_param_types);
             free(param_name);
             *out_param_types = NULL;
@@ -288,7 +326,13 @@ static int parse_params(tree_t *local_symtable, type_t **out_param_types, int *o
     return 0;
 }
 
-int parse_function(tree_t *global_symtable) {
+
+int parse_block(tree_t *global_symtable, tree_t *local_symtable, indent_stack_t *indent_stack){
+
+
+}
+
+int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
     
     next(); //z def na nazev fce
 
@@ -318,9 +362,6 @@ int parse_function(tree_t *global_symtable) {
         free(func_name);
         return 2;
     }
-
-    next();
-
     
     tree_t *local_symtable = symtable_init(global_symtable);
     if (local_symtable == NULL) {
@@ -378,8 +419,7 @@ int parse_function(tree_t *global_symtable) {
     return 0; 
 }
 
-
-int parse_main(tree_t *global_symtable){
+int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
     next(); //z def na další token
 
     // název funkce (identifikátor)
@@ -435,6 +475,8 @@ int parse_main(tree_t *global_symtable){
     }
     
 
+
+
     symtable_destroy_tree(local_symtable);
     return 0; 
 }
@@ -449,8 +491,8 @@ int register_functions(tree_t *global_symtable){
     control |= symtable_insert(global_symtable,"toStr",FUNCTION,TYPE_STRING, 0,1 );
     control |= symtable_insert(global_symtable,"toInt",FUNCTION,TYPE_INT, 0,1 );
     control |= symtable_insert(global_symtable,"strLength",FUNCTION,TYPE_INT, 0,1 );
-    control |= symtable_insert(global_symtable,"subStr",FUNCTION,TYPE_STRING, 0,1 );
-    control |= symtable_insert(global_symtable,"ord",FUNCTION,TYPE_INT, 0,1 );
+    control |= symtable_insert(global_symtable,"subStr",FUNCTION,TYPE_STRING, 0,3 );
+    control |= symtable_insert(global_symtable,"ord",FUNCTION,TYPE_INT, 0,2 );
     control |= symtable_insert(global_symtable,"chr",FUNCTION,TYPE_STRING, 0,1 );
 
     if(control != 0 ){
