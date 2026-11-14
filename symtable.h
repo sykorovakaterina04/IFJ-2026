@@ -33,7 +33,7 @@ typedef struct tree{
 
 tree_t *symtable_init(tree_t *parent);
 
-int symtable_insert(tree_t *tree, const char *key, node_type_t type, int line, int param_count, data_type_t *param_types);
+int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data, int line, int param_count, data_type_t *param_types);
 
 tdata_t *symtable_lookup(const tree_t *tree, const char *key);
 
