@@ -104,6 +104,7 @@ ast_node_t *ast_create_func_call(char *name, ast_node_t *args, int line){
 
     strcpy(func_call->data.func.name, name);
     func_call->data.func.args = args;
+    func_call->line = line;
 
     return func_call;
 }
