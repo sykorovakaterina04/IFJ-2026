@@ -1,3 +1,7 @@
+#ifndef AST_H
+#define AST_H
+
+
 #include <stdlib.h>
 #include "symtable.h"
 
@@ -56,14 +60,14 @@ struct ast_node{
             int i_val;
             double d_val;
             char *string_val;
-            var_type_t type;
-            var_type_t conversion_type;
+            data_type_t type;
+            data_type_t conversion_type;
         }literal;
 
         struct {
             char *name;
-            var_type_t type;
-            var_type_t conversion_type;
+            data_type_t type;
+            data_type_t conversion_type;
             frame_t frame;
         }variable;
 
@@ -83,3 +87,4 @@ ast_tree_t *ast_init();
 
 ast_node_t *ast_create_node(ast_type_t type);
 
+#endif
