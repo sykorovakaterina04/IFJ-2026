@@ -109,6 +109,18 @@ void case_toStr(ast_node_t *node){
     }
 }
 
+void case_toInt(ast_node_t *node){
+
+    if(node->data.func.args == NULL){
+        return;
+    }
+
+    projdi_strom(node->data.func.args); //posle argumenty na zasobnik
+
+    printf("FLOAT2INTS\n");
+}
+
+
 //konec implementace vestavenych funkci
 
 //funkce pro generovani literalu
@@ -216,6 +228,8 @@ void ast_call(ast_node_t *node){
             case_print(node);
     }else if(strcmp(node->data.func.name, "toStr") == 0) {
             case_toStr(node);
+    }else if(strcmp(node->data.func.name, "toInt") == 0){
+            case_toInt(node);
     }else {
         printf("CALL ");//dokoncit, velmi nedokoncene!!! 
         printf("%s", node->data.func.name);
