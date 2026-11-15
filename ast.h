@@ -12,6 +12,10 @@ typedef enum {
 } frame_t;
 
 typedef enum {
+    ADD, SUB, MUL, DIV, IDIV
+} binop_type_t;
+
+typedef enum {
     INT, STRING, DOUBLE
 } var_type_t;
 
@@ -35,7 +39,7 @@ struct ast_node{
         struct{
             ast_node_t *left;
             ast_node_t *right;
-            char op;
+            binop_type_t type;
         }binop;
 
         struct{
@@ -64,7 +68,7 @@ struct ast_node{
 
         struct { 
             ast_node_t *first_line;
-            tree_t symtable;
+            tree_t *symtable;
         } block;
 
     }data;
