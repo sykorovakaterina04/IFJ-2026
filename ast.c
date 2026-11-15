@@ -108,3 +108,33 @@ ast_node_t *ast_create_func_call(char *name, ast_node_t *args, int line){
 
     return func_call;
 }
+
+ast_node_t *ast_create_literal_int(int value, int line){
+    ast_node_t *literal_int = ast_create_node(AST_LITERAL);
+
+    literal_int->data.literal.i_val = value;
+    literal_int->data.literal.type = TYPE_INT;
+    literal_int->line = line;
+
+    return literal_int;
+}
+
+ast_node_t *ast_create_literal_double(double value, int line){
+    ast_node_t *literal_double = ast_create_node(AST_LITERAL);
+
+    literal_double->data.literal.d_val = value;
+    literal_double->data.literal.type = TYPE_DOUBLE;
+    literal_double->line = line;
+
+    return literal_double;
+}
+
+ast_node_t *ast_create_literal_string(char *value, int line){
+    ast_node_t *literal_string = ast_create_node(AST_LITERAL);
+
+    literal_string->data.literal.i_val = value;
+    literal_string->data.literal.type = TYPE_STRING;
+    literal_string->line = line;
+
+    return literal_string;
+}
