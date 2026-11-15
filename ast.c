@@ -89,12 +89,21 @@ ast_node_t *ast_create_while(ast_node_t *cond, ast_node_t *body){
     return while_loop;
 }
 
-ast_node_t *ast_create_func_def(char *name, ast_node_t *args){
+ast_node_t *ast_create_func_def(char *name, ast_node_t *args, int line){
     ast_node_t *func_def = ast_create_node(AST_FUNC_DEF);
 
     strcpy(func_def->data.func.name, name);
     func_def->data.func.args = args;
+    func_def->line = line;
 
     return func_def;
 }
 
+ast_node_t *ast_create_func_call(char *name, ast_node_t *args, int line){
+    ast_node_t *func_call = ast_create_node(AST_CALL);
+
+    strcpy(func_call->data.func.name, name);
+    func_call->data.func.args = args;
+
+    return func_call;
+}
