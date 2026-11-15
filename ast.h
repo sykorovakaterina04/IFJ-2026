@@ -27,7 +27,6 @@ struct ast_node{
 
     ast_node_t *next;
     
-
     int line;
 
     union {

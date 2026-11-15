@@ -45,6 +45,8 @@ ast_node_t *ast_create_block(tree_t *tree, ast_node_t *first_line){
 
     block->data.block.first_line = first_line;
     block->data.block.symtable = tree;
+
+    return block;
 }
 
 ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_body){
@@ -53,4 +55,6 @@ ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_b
     conditional->data.condicionals.cond = cond;
     conditional->data.condicionals.body = body;
     conditional->data.condicionals.else_body = else_body;
+
+    return conditional;
 }
