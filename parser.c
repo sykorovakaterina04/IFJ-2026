@@ -24,12 +24,12 @@ static void free_token(token_t *tok){
     }
 }
 
-void peek_token(void){
+token_t peek_token(void){
     if(!looked_ahead){
         ahead_token = get_token(); 
         looked_ahead = true;
     }
-    return ahead_token;
+    ahead_token;
 }
 
 void next(void){
@@ -40,7 +40,6 @@ void next(void){
     }else{
         current_token = get_token();
     }
-    current_token = get_token();
 }
 
 // hotovo zatim az propojeni s lexerem
@@ -113,12 +112,11 @@ int parse(void) {
         return 2; // CHYBA // Chyba v prologu
     }
 
-    // Hlavní cyklus
     while (current_token.type != TOKEN_EOF) {
         switch (current_token.type) {
             case KEYWORD_DEF:
-                // Začátek definice funkce
-                result = parse_function(global_symtable);
+        
+                result = parse_function(global_symtable, &indent_stack);
                 if (result != 0){
                     indent_free(&indent_stack);
                     free_token(&current_token);
@@ -152,7 +150,7 @@ int parse(void) {
                 }
                 main = 1;
 
-                result = parse_main(global_symtable);
+                result = parse_main(global_symtable,&indent_stack);
                 if (result != 0) {
                     indent_free(&indent_stack);
                     free_token(&current_token);
@@ -175,6 +173,8 @@ int parse(void) {
 
     if(main != 1){
         symtable_destroy_tree(global_symtable); // uklid
+        free_token(&current_token);
+        symtable_destroy_tree(global_symtable);
         return 3; // CHYBA 
     }
     indent_free(&indent_stack);
@@ -184,7 +184,7 @@ int parse(void) {
 }
 
 //nacitani datoveho typu
-static int parse_type(type_t *out_type){
+static int parse_type(data_type_t *out_type){
     switch (current_token.type)
     {
     case KEYWORD_INT:  // podle typu mezi zavorkama si to vratim zrovna
@@ -214,7 +214,7 @@ static int parse_type(type_t *out_type){
 }
 
 // parametry mezi () pri vstupu jsem na prvnim tokenu za (
-static int parse_params(tree_t *local_symtable, type_t **out_param_types, int *out_param_count){
+static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, int *out_param_count){
     *out_param_types = NULL;
     *out_param_count = 0;
 
@@ -263,7 +263,7 @@ static int parse_params(tree_t *local_symtable, type_t **out_param_types, int *o
 
         next(); // typ parametru
 
-        type_t param_type;
+        data_type_t param_type;
 
         int type_res = parse_type(&param_type);
         if(type_res != 0){
@@ -281,7 +281,7 @@ static int parse_params(tree_t *local_symtable, type_t **out_param_types, int *o
             return 99;
         }
 
-        type_t *tmp = realloc(*out_param_types, (*out_param_count + 1) * sizeof(type_t));
+        data_type_t *tmp = realloc(*out_param_types, (*out_param_count + 1) * sizeof(data_type_t));
         if (tmp == NULL) {
             free(*out_param_types);
             *out_param_types = NULL;
@@ -368,7 +368,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
         free(func_name);
         return 99; // Interní chyba alokace
     }
-    type_t *param_types = NULL;
+    data_type_t *param_types = NULL;
     int param_count = 0;
 
     next(); // do ()
@@ -381,7 +381,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
     next(); // posun za )
 
     //volitelny navratovy typ
-    type_t return_type = TYPE_UNIT;
+    data_type_t return_type = TYPE_UNIT;
     if(current_token.type == TOKEN_COLON){
         next(); //za :
         res = parse_type(&return_type);
