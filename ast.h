@@ -17,7 +17,7 @@ typedef enum {
 } frame_t;
 
 typedef enum {
-    ADD, SUB, MUL, DIV, IDIV
+    ADD, SUB, MUL, DIV, IDIV, EQ, NEQ, LT, GT, LEQ, GEQ
 } binop_type_t;
 
 typedef enum {
