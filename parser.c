@@ -29,7 +29,7 @@ token_t peek_token(void){
         ahead_token = get_token(); 
         looked_ahead = true;
     }
-    ahead_token;
+    return ahead_token;
 }
 
 void next(void){
@@ -174,7 +174,7 @@ int parse(void) {
     if(main != 1){
         symtable_destroy_tree(global_symtable); // uklid
         free_token(&current_token);
-        symtable_destroy_tree(global_symtable);
+        indent_free(&indent_stack);
         return 3; // CHYBA 
     }
     indent_free(&indent_stack);
@@ -273,7 +273,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
             return type_res; // v type res je ta chyba ktera se stala
         }
 
-        int ins_res = symtable_insert(local_symtable, param_name,param_type,false,param_line);
+        int ins_res = symtable_insert(local_symtable, param_name,PARAM,param_type,param_line,0,NULL);
         free(param_name);
         if(ins_res != 0){
             free(*out_param_types);
@@ -394,7 +394,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
     }
 
     //vkladani celkove funce do global symtable DODELAT CEKAM NA novou funkci v symtable
-    int ins_res = 0; //toto prepsat funkci
+    int ins_res = symtable_insert(global_symtable, func_name,FUNCTION,return_type,func_line,param_count,param_types);
     free(func_name);
     free(param_types);
     if(ins_res!=0){
@@ -429,7 +429,10 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
 
         
     if (symtable_lookup(global_symtable, current_token.str_val) == NULL) {
-        symtable_insert(global_symtable, current_token.str_val, TYPE_UNIT, false, current_token.line);
+        if(symtable_insert(global_symtable, current_token.str_val, FUNCTION, TYPE_UNIT, current_token.line,0,NULL) != 0){
+            return 99;
+        }
+        
     } else {
         return 4;
     }
@@ -481,19 +484,27 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
     return 0; 
 }
 
-int register_functions(tree_t *global_symtable){
-    int control = 0;
 
-    control |= symtable_insert(global_symtable,"print",FUNCTION,TYPE_UNIT, 0,1 );
-    control |= symtable_insert(global_symtable,"readLine",FUNCTION,TYPE_STRING, 0,0 );
-    control |= symtable_insert(global_symtable,"readInt",FUNCTION,TYPE_INT, 0,0 );
-    control |= symtable_insert(global_symtable,"readDouble",FUNCTION,TYPE_DOUBLE, 0,0);
-    control |= symtable_insert(global_symtable,"toStr",FUNCTION,TYPE_STRING, 0,1 );
-    control |= symtable_insert(global_symtable,"toInt",FUNCTION,TYPE_INT, 0,1 );
-    control |= symtable_insert(global_symtable,"strLength",FUNCTION,TYPE_INT, 0,1 );
-    control |= symtable_insert(global_symtable,"subStr",FUNCTION,TYPE_STRING, 0,3 );
-    control |= symtable_insert(global_symtable,"ord",FUNCTION,TYPE_INT, 0,2 );
-    control |= symtable_insert(global_symtable,"chr",FUNCTION,TYPE_STRING, 0,1 );
+int register_functions(tree_t *global_symtable){
+
+    data_type_t p_any[] = {TYPE_ANY};
+    data_type_t p_double[] = {TYPE_DOUBLE};
+    data_type_t p_string[] = {TYPE_STRING};
+    data_type_t p_int[] = {TYPE_INT};
+    data_type_t p_substr[] = {TYPE_STRING,TYPE_INT,TYPE_INT};
+    data_type_t p_ord[] = {TYPE_STRING,TYPE_INT};
+
+    int control = 0;
+    control |= symtable_insert(global_symtable,"print",FUNCTION,TYPE_UNIT, 0,1,p_any );
+    control |= symtable_insert(global_symtable,"readLine",FUNCTION,TYPE_STRING, 0,0,NULL );
+    control |= symtable_insert(global_symtable,"readInt",FUNCTION,TYPE_INT, 0,0,NULL );
+    control |= symtable_insert(global_symtable,"readDouble",FUNCTION,TYPE_DOUBLE, 0,0,NULL);
+    control |= symtable_insert(global_symtable,"toStr",FUNCTION,TYPE_STRING, 0,1,p_any );
+    control |= symtable_insert(global_symtable,"toInt",FUNCTION,TYPE_INT, 0,1,p_double );
+    control |= symtable_insert(global_symtable,"strLength",FUNCTION,TYPE_INT, 0,1,p_string );
+    control |= symtable_insert(global_symtable,"subStr",FUNCTION,TYPE_STRING, 0,3,p_substr );
+    control |= symtable_insert(global_symtable,"ord",FUNCTION,TYPE_INT, 0,2,p_ord );
+    control |= symtable_insert(global_symtable,"chr",FUNCTION,TYPE_STRING, 0,1,p_int );
 
     if(control != 0 ){
         return 99;
