@@ -58,3 +58,13 @@ ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_b
 
     return conditional;
 }
+
+ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame){
+    ast_node_t *var = ast_create_node(var);
+
+    var->data.variable.name = name;
+    var->data.variable.frame = frame;
+    var->data.variable.type = type;
+
+    return var;
+}

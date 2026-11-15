@@ -56,6 +56,7 @@ struct ast_node{
             int i_val;
             double d_val;
             char *string_val;
+            var_type_t conversion_type;
         }literal;
 
         struct {
