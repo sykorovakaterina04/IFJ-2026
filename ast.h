@@ -55,6 +55,7 @@ struct ast_node{
         struct{
             char *name;
             ast_node_t *args;
+            ast_node_t *body;
         }func;
 
         struct {
