@@ -72,11 +72,19 @@ void case_print(ast_node_t *node){
     printf("\n");
 }
 
+
 //funkce pro generovani literalu
 void ast_literal(ast_node_t *node){
     printf("PUSHS ");
     print_literal(node);
     printf("\n");
+
+     //pripad kdy conversion_type neni shodny s type
+      if(node->data.literal.conversion_type != node->return_type){
+        if((node->return_type == INT) && (node->data.literal.conversion_type == DOUBLE)){
+            printf("INT2FLOATS\n");
+        }
+      }
 }
 
 //funkce pro generovani definice promenne
@@ -90,36 +98,41 @@ void ast_var_def(ast_node_t *node){
 
 //funkce pro generovani kodu za pripadu, ze je promenna pouzita (napr. jako parametr)
 void ast_var(ast_node_t *node){
-
+    
       printf("PUSHS ");
       print_var(node);
       printf("\n");
 
+      //pripad kdy conversion_type neni shodny s type
+      if(node->data.variable.conversion_type != node->data.variable.type){
+        if((node->data.variable.type == INT) && (node->data.variable.conversion_type == DOUBLE)){
+            printf("INT2FLOATS\n");
+        }
+      }
 }
 
 //funkce pro genrovani binarnich operaci
-//TODO, potreba upravit ast, dokoncit zbytek operaci
+//TODO, potreba upravit ast, dokoncit zbytek operaci, potreba poresit pripady kdy potreba poresit konverze mezi datovymi typy
 void ast_binop(ast_node_t *node){
 
     projdi_strom(node->data.binop.left);
     projdi_strom(node->data.binop.right);
 
-    switch (node->data.binop.op){
-        case ('+'):
+    switch (node->data.binop.type){
+        case ADD:
             printf("ADDS\n");
             break;
-        case ('-'):
+        case SUB:
             printf("SUBS\n");
             break;
-        case('*'):
+        case MUL:
             printf("MULS\n");
             break;
-        case('/'): //je potreba poresit zda je vysledek operace int nebo double
-            if(node->return_type == INT){
-                printf("IDIVS\n");
-            } else if (node->return_type == DOUBLE){
-                printf("DIVS\n");
-            }
+        case IDIV: //je potreba poresit zda je vysledek operace int nebo double
+            printf("IDIVS\n");
+            break;
+        case DIV:
+            printf("DIVS\n");
             break;
         default:
             break;
@@ -138,7 +151,9 @@ void ast_assign(ast_node_t *node){
 
 }
 
-
+//pocet volani parametru je soucasti symtable
+//lokalni promenne reseni semantika ?
+//telo funkce TODO
 void ast_func_def(ast_node_t *node){
 
 
