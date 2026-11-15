@@ -59,12 +59,42 @@ ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_b
     return conditional;
 }
 
-ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame){
+ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame, int line){
     ast_node_t *var = ast_create_node(var);
 
-    var->data.variable.name = name;
+    strcpy(var->data.variable.name, name);
     var->data.variable.frame = frame;
     var->data.variable.type = type;
+    var->line = line;
 
     return var;
 }
+
+ast_node_t *ast_create_var_def(char *name, var_type_t type, int line){
+    ast_node_t *var_def = ast_create_node(AST_VAR_DEF);
+
+    strcpy(var_def->data.variable.name, name);
+    var_def->data.variable.type = type;
+    var_def->line = line;
+
+    return var_def;
+}
+
+ast_node_t *ast_create_while(ast_node_t *cond, ast_node_t *body){
+    ast_node_t *while_loop = ast_create_node(AST_WHILE);
+
+    while_loop->data.condicionals.cond = cond;
+    while_loop->data.condicionals.body = body;
+
+    return while_loop;
+}
+
+ast_node_t *ast_create_func_def(char *name, ast_node_t *args){
+    ast_node_t *func_def = ast_create_node(AST_FUNC_DEF);
+
+    strcpy(func_def->data.func.name, name);
+    func_def->data.func.args = args;
+
+    return func_def;
+}
+
