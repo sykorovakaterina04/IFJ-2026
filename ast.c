@@ -132,9 +132,17 @@ ast_node_t *ast_create_literal_double(double value, int line){
 ast_node_t *ast_create_literal_string(char *value, int line){
     ast_node_t *literal_string = ast_create_node(AST_LITERAL);
 
-    literal_string->data.literal.i_val = value;
+    strcpy(literal_string->data.literal.i_val, value);
     literal_string->data.literal.type = TYPE_STRING;
     literal_string->line = line;
 
     return literal_string;
+}
+
+ast_node_t *ast_create_return(ast_node_t *var){
+    ast_node_t *ast_return = ast_create_node(AST_RETURN);
+
+    ast_return->data.node_return.var = var;
+
+    return ast_return;
 }

@@ -8,7 +8,8 @@
 typedef enum {
     AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
     AST_IF, AST_FOR, AST_WHILE, AST_CALL, 
-    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK
+    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK,
+    AST_RETURN
 } ast_type_t;
 
 typedef enum {
@@ -74,8 +75,11 @@ struct ast_node{
         struct { 
             ast_node_t *first_line;
             tree_t *symtable;
-        } block;
+        }block;
 
+        struct {
+            ast_node_t *var;
+        }node_return;
     }data;
 };
 
