@@ -3,13 +3,17 @@
 
 typedef enum {
     AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
-    AST_IF, AST_WHILE, AST_CALL, 
-    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK, AST_PRINT
+    AST_IF, AST_FOR, AST_WHILE, AST_CALL, 
+    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK
 } ast_type_t;
 
 typedef enum {
     GLOBAL, LOCAL, TMP
 } frame_t;
+
+typedef enum {
+    ADD, SUB, MUL, DIV, IDIV
+} binop_type_t;
 
 typedef enum {
     INT, STRING, DOUBLE
@@ -19,11 +23,10 @@ typedef struct ast_node ast_node_t;
 
 struct ast_node{
     ast_type_t type;
-    type_t return_type;
+    data_type_t return_type;
 
     ast_node_t *next;
     
-
     int line;
 
     union {
@@ -31,11 +34,11 @@ struct ast_node{
             ast_node_t *dest;
             ast_node_t *source;
         }assign;
-        
+
         struct{
             ast_node_t *left;
             ast_node_t *right;
-            char op;
+            binop_type_t type;
         }binop;
 
         struct{
@@ -53,6 +56,7 @@ struct ast_node{
             int i_val;
             double d_val;
             char *string_val;
+            var_type_t conversion_type;
         }literal;
 
         struct {
@@ -64,6 +68,7 @@ struct ast_node{
 
         struct { 
             ast_node_t *first_line;
+            tree_t *symtable;
         } block;
 
     }data;
