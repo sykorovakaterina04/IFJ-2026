@@ -120,6 +120,19 @@ void case_toInt(ast_node_t *node){
     printf("FLOAT2INTS\n");
 }
 
+void case_strLength(ast_node_t *node){
+
+     if(node->data.func.args == NULL){
+        return;
+    }
+
+    projdi_strom(node->data.func.args);
+
+    printf("POPS GF@_tmp1\n");
+    printf("STRLEN GF@_tmp1 GF@_tmp1\n");
+    printf("PUSHS GF@_tmp1\n");
+
+}
 
 //konec implementace vestavenych funkci
 
@@ -230,6 +243,8 @@ void ast_call(ast_node_t *node){
             case_toStr(node);
     }else if(strcmp(node->data.func.name, "toInt") == 0){
             case_toInt(node);
+    }else if(strcmp(node->data.func.name, "strLength") == 0){
+            case_strLength(node);
     }else {
         printf("CALL ");//dokoncit, velmi nedokoncene!!! 
         printf("%s", node->data.func.name);
