@@ -3,8 +3,8 @@
 
 typedef enum {
     AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
-    AST_IF, AST_WHILE, AST_CALL, 
-    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK, AST_PRINT
+    AST_IF, AST_FOR, AST_WHILE, AST_CALL, 
+    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK
 } ast_type_t;
 
 typedef enum {
@@ -19,7 +19,7 @@ typedef struct ast_node ast_node_t;
 
 struct ast_node{
     ast_type_t type;
-    type_t return_type;
+    data_type_t return_type;
 
     ast_node_t *next;
     
@@ -31,7 +31,7 @@ struct ast_node{
             ast_node_t *dest;
             ast_node_t *source;
         }assign;
-        
+
         struct{
             ast_node_t *left;
             ast_node_t *right;
@@ -64,6 +64,7 @@ struct ast_node{
 
         struct { 
             ast_node_t *first_line;
+            tree_t symtable;
         } block;
 
     }data;
