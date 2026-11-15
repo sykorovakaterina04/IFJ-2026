@@ -60,7 +60,7 @@ ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_b
 }
 
 ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame, int line){
-    ast_node_t *var = ast_create_node(var);
+    ast_node_t *var = ast_create_node(AST_VAR);
 
     strcpy(var->data.variable.name, name);
     var->data.variable.frame = frame;
