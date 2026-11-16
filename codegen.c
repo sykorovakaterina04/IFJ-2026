@@ -1,6 +1,5 @@
 #include "codegen.h"
 
-
 //funkce pro tisknuti literalu
 //vyuzivaji funkce ast_literal(), case_print()
 void print_literal(ast_node_t *node){
@@ -128,10 +127,48 @@ void case_strLength(ast_node_t *node){
 
     projdi_strom(node->data.func.args);
 
-    printf("POPS GF@_tmp1\n");
-    printf("STRLEN GF@_tmp1 GF@_tmp1\n");
-    printf("PUSHS GF@_tmp1\n");
+    printf("POPS GF@$tmp1\n");
+    printf("STRLEN GF@$tmp1 GF@_tmp1\n");
+    printf("PUSHS GF@$tmp1\n");
 
+}
+
+void case_readLine(void){
+
+    printf("READ GF@$tmp1 string\n");
+    printf("PUSHS GF@$tmp1\n");
+}
+
+void case_readInt(void){
+
+    //vytvorime unikatni id pro cislovani jednotlivych navesti, tak aby se nam pri kazdem volani readInt
+    //vytvorilo unikatni navesti
+    static int cnt = 0;
+    int id = cnt++;
+
+    printf("READ GF@$tmp1 int\n");
+    //pri EOF nebo chybnem vstupu READ vrati nil@nil, ale my potrebujeme aby vratil 0
+    //pomuzeme si prikazem JUMPIFNEQ
+    printf("JUMPIFNEQ $skip_int_%d GF@$tmp1 nil@nil\n", id);
+    printf("MOVE GF@$tmp1 int@0\n");
+    printf("LABEL $skip_int_%d\n", id);
+    printf("PUSHS GF@$tmp1\n");
+}
+
+void case_readDouble(void){
+
+    //vytvorime unikatni id pro cislovani jednotlivych navesti, tak aby se nam pri kazdem volani readDouble
+    //vytvorilo unikatni navesti
+    static int cnt = 0;
+    int id = cnt++;
+
+    printf("READ GF@$tmp1 float\n");
+    //pri EOF nebo chybnem vstupu READ vrati nil@nil, ale my potrebujeme aby vratil 0
+    //pomuzeme si prikazem JUMPIFNEQ
+    printf("JUMPIFNEQ $skip_double_%d GF@$tmp1 nil@nil\n", id);
+    printf("MOVE GF@$tmp1 float@0x0p+0\n");
+    printf("LABEL $skip_double_%d\n", id);
+    printf("PUSHS GF@$tmp1\n");
 }
 
 //konec implementace vestavenych funkci
@@ -187,10 +224,10 @@ void ast_binop(ast_node_t *node){
         case ADD:
         if(node->return_type == TYPE_STRING){
             //volani CONVCAT neni zasobnikova funkce, potreba si projpucit dve z GF@_tmpx
-            printf("POPS GF@_tmp2\n"); //prava strana
-            printf("POPS GF@_tmp1\n");  //leva strana
-            printf("CONCAT GF@_tmp1 GF@_tmp1 GF@_tmp2\n");
-            printf("PUSHS GF@_tmp1\n");
+            printf("POPS GF@$tmp2\n"); //prava strana
+            printf("POPS GF@$tmp1\n");  //leva strana
+            printf("CONCAT GF@$tmp1 GF@$tmp1 GF@$tmp2\n");
+            printf("PUSHS GF@$tmp1\n");
         } else {
             printf("ADDS\n");
         }
@@ -245,6 +282,8 @@ void ast_call(ast_node_t *node){
             case_toInt(node);
     }else if(strcmp(node->data.func.name, "strLength") == 0){
             case_strLength(node);
+    }else if(strcmp(node->data.func.name, "readLine") == 0){
+            case_readLine();
     }else {
         printf("CALL ");//dokoncit, velmi nedokoncene!!! 
         printf("%s", node->data.func.name);
@@ -327,11 +366,11 @@ void generuj_kodu(ast_tree_t *tree){
     //vygeneruje hlavičku
     printf(".IFJcode26\n");
 
-    printf("DEFVAR GF@_tmp1\n");
-    printf("DEFVAR GF@_tmp2\n");
-    printf("DEFVAR GF@_tmp3\n");
-    printf("DEFVAR GF@_tmp4\n");
-    printf("DEFVAR GF@_tmp5\n");
+    printf("DEFVAR GF@$tmp1\n");
+    printf("DEFVAR GF@$tmp2\n");
+    printf("DEFVAR GF@$tmp3\n");
+    printf("DEFVAR GF@$tmp4\n");
+    printf("DEFVAR GF@$tmp5\n");
 
     printf("CREATEFRAME\n");
     printf("PUSHFRAME\n");
