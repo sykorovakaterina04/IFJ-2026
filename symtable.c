@@ -19,7 +19,7 @@ static int symtable_max(int a, int b){
     return (a > b) ? a : b;
 }
 
-tdata_t * symtable_lookup(const tree_t *tree, const char *key){
+tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
 
     if(tree == NULL){
         fprintf(stderr, "%s", "predany strom byl nulovy");
