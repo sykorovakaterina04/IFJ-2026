@@ -4,7 +4,7 @@ ast_tree_t *ast_init(){
     ast_tree_t *ast = calloc(1, sizeof(ast_tree_t));
     if(ast == NULL){
         fprintf(stderr, "%s", "chyba pri alokaci stromu");
-        return NULL;
+        exit(99);
     }
     return ast;
 }
@@ -59,7 +59,7 @@ ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_b
     return conditional;
 }
 
-ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame, int line){
+ast_node_t *ast_create_var(char *name, data_type_t type, frame_t frame, int line){
     ast_node_t *var = ast_create_node(AST_VAR);
 
     var->data.variable.name = malloc(strlen(name)+1);
@@ -75,7 +75,7 @@ ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame, int line)
     return var;
 }
 
-ast_node_t *ast_create_var_def(char *name, var_type_t type, int line){
+ast_node_t *ast_create_var_def(char *name, data_type_t type, int line){
     ast_node_t *var_def = ast_create_node(AST_VAR_DEF);
 
     var_def->data.variable.name = malloc(strlen(name)+1);
@@ -164,6 +164,15 @@ ast_node_t *ast_create_literal_string(char *value, int line){
     return literal_string;
 }
 
+ast_node_t *ast_create_literal_unit(int line){
+    ast_node_t *literal_unit = ast_create_node(AST_LITERAL);
+
+    literal_unit->data.literal.type = TYPE_UNIT;
+    literal_unit->line = line;
+
+    return literal_unit;
+}
+
 ast_node_t *ast_create_return(ast_node_t *var, int line){
     ast_node_t *ast_return = ast_create_node(AST_RETURN);
 
@@ -229,6 +238,10 @@ static void ast_destroy_node(ast_node_t *node){
             if(node->data.literal.type == TYPE_STRING){
                 free(node->data.literal.string_val);
             }
+            break;
+
+        case AST_RETURN:
+            ast_destroy_node(node->data.node_return.var);
             break;
     }
     ast_destroy_node(node->next);
