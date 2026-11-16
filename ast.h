@@ -92,4 +92,32 @@ ast_tree_t *ast_init();
 
 ast_node_t *ast_create_node(ast_type_t type);
 
+ast_node_t *ast_create_binop(binop_type_t type, ast_node_t *left, ast_node_t *right, int line);
+
+ast_node_t *ast_create_assign(ast_node_t *source, ast_node_t *dest, int line);
+
+ast_node_t *ast_create_block(tree_t *tree, ast_node_t *first_line);
+
+ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_body);
+
+ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame, int line);
+
+ast_node_t *ast_create_var_def(char *name, var_type_t type, int line);
+
+ast_node_t *ast_create_while(ast_node_t *cond, ast_node_t *body);
+
+ast_node_t *ast_create_func_def(char *name, ast_node_t *args, ast_node_t *body, int line);
+
+ast_node_t *ast_create_func_call(char *name, ast_node_t *args, int line);
+
+ast_node_t *ast_create_literal_int(int value, int line);
+
+ast_node_t *ast_create_literal_double(double value, int line);
+
+ast_node_t *ast_create_literal_string(char *value, int line);
+
+ast_node_t *ast_create_return(ast_node_t *var, int line);
+
+void ast_destroy_tree(ast_tree_t *tree);
+
 #endif
