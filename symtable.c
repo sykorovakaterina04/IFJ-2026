@@ -26,6 +26,11 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
         return NULL;
     }
 
+    if(key == NULL ){
+        fprintf(stderr, "%s", "prednay klic je nulovy");
+        return NULL;
+    }
+
     tnode_t *tmp = tree->root;
 
     while(tmp != NULL){
@@ -45,28 +50,24 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
 
 tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
-    if(tree == NULL){
+    if(tree == NULL ){
         fprintf(stderr, "%s", "predany strom byl nulovy");
         return NULL;
     }
 
-    tnode_t *tmp = tree->root;
-
-    while(tmp != NULL){
-        int cmp = strcmp(key, tmp->key);
-        if(cmp < 0){
-            tmp = tmp->left;
-        }
-        if(cmp > 0){
-            tmp = tmp->right;
-        }
-        if (cmp == 0){
-            return &(tmp->data);
-        }
+    if(key == NULL ){
+        fprintf(stderr, "%s", "prednay klic je nulovy");
+        return NULL;
     }
 
-    if(tree->parent != NULL){
-        symtable_lookup(tree->parent, key);
+    tnode_t *tmp = tree->root;
+    tdata_t *data = NULL;
+    
+
+    while(tmp){
+        data = symtable_lookup(tree->parent, key);
+
+        if(!data && data->active) return data;
     }
     return NULL;
 }
