@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "automat.h"
 #include "symtable.h"
+#include "expr_parser.h"
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -177,9 +178,7 @@ int parse(void) {
 
     result = parse_prologue();
     if (result != 0) {
-        indent_free(&indent_stack);
-        free_token(&current_token);
-        symtable_destroy_tree(global_symtable); // uklid
+        cleanup_parser(global_symtable,&indent_stack);
         return 2; // CHYBA // Chyba v prologu
     }
 
@@ -189,9 +188,7 @@ int parse(void) {
         
                 result = parse_function(global_symtable, &indent_stack);
                 if (result != 0){
-                    indent_free(&indent_stack);
-                    free_token(&current_token);
-                    symtable_destroy_tree(global_symtable); // uklid
+                    cleanup_parser(global_symtable,&indent_stack);
                     return result; // CHYBA
                 } 
                 break;
@@ -204,9 +201,7 @@ int parse(void) {
             case TOKEN_AT_MAIN:
 
                 if(current_token.col != indent_top(&indent_stack)){
-                    indent_free(&indent_stack);
-                    free_token(&current_token);
-                    symtable_destroy_tree(global_symtable);
+                    cleanup_parser(global_symtable,&indent_stack);
                     return 2;
                 }
                 next();
@@ -217,25 +212,19 @@ int parse(void) {
                 }
 
                 if(current_token.type != KEYWORD_DEF || (had_EOL && indent_top(&indent_stack)!= current_token.col)){
-                    indent_free(&indent_stack);
-                    free_token(&current_token);
-                    symtable_destroy_tree(global_symtable); // uklid
+                    cleanup_parser(global_symtable,&indent_stack);
                     return 2; // CHYBA 
                 }
 
                 if(main) {
-                    indent_free(&indent_stack);
-                    free_token(&current_token);                   
-                    symtable_destroy_tree(global_symtable); // uklid
+                    cleanup_parser(global_symtable,&indent_stack);
                     return 4; // CHYBA vice mainu
                 }
                 main = 1;
 
                 result = parse_main(global_symtable,&indent_stack);
                 if (result != 0) {
-                    indent_free(&indent_stack);
-                    free_token(&current_token);
-                    symtable_destroy_tree(global_symtable); // uklid
+                    cleanup_parser(global_symtable,&indent_stack);
                     return result; //CHYBA
                 }
 
@@ -243,9 +232,7 @@ int parse(void) {
 
             default:
                 // Neočekávaný token
-                indent_free(&indent_stack);
-                free_token(&current_token);
-                symtable_destroy_tree(global_symtable); // uklid
+                cleanup_parser(global_symtable,&indent_stack);
                 return 2; // CHYBA // Syntaktická chyba
         }
     }
@@ -772,37 +759,6 @@ static int parse_return(tree_t *global_symtable, tree_t *local_symtable, data_ty
     return 0;
 
 }
-
-
-//dodelat
-static int parse_expression(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, bool is_condition){
-
-
-    if(current_token.type== TOKEN_EOL 
-        || current_token.type ==TOKEN_EOF
-        || current_token.type == TOKEN_SEMICOLON  
-        || current_token.type == KEYWORD_THEN  
-        || current_token.type == KEYWORD_DO  
-        || current_token.type == TOKEN_RPAREN  
-        || current_token.type ==TOKEN_COMMA){
-            return 2; // vyraz nesmi byt prazdny
-        }
-
-    while (current_token.type != TOKEN_EOL 
-        && current_token.type !=TOKEN_EOF
-        && current_token.type != TOKEN_SEMICOLON  
-        && current_token.type != KEYWORD_THEN  
-        && current_token.type != KEYWORD_DO  
-        && current_token.type != TOKEN_RPAREN  
-        && current_token.type !=TOKEN_COMMA)
-    {
-        next();
-    }
-    
-    *out_type = TYPE_UNIT;
-    return 0;
-}
-
 
 
 int parse_block(tree_t *global_symtable, tree_t *local_symtable, indent_stack_t *indent_stack, data_type_t func_return_type){
