@@ -215,6 +215,16 @@ void case_ord(ast_node_t *node){
 
 }
 
+void case_chr(ast_node_t *node){
+    if(node->data.func.args == NULL){
+        return;
+    }
+
+    projdi_strom(node->data.func.args); 
+
+    printf("INT2CHARS\n");
+}
+
 //konec implementace vestavenych funkci
 
 //funkce pro generovani literalu
@@ -223,8 +233,6 @@ void ast_literal(ast_node_t *node){
     print_literal(node);
     printf("\n");
 
-    //TODO potreba opravit/pridat var_type_t type, aby se mohly porovnavat s typem konverze
-    //momentalni implementace je spatne
      //pripad kdy conversion_type neni shodny s type
       if(node->data.literal.conversion_type != node->return_type){
         if((node->return_type == INT) && (node->data.literal.conversion_type == DOUBLE)){
@@ -334,6 +342,8 @@ void ast_call(ast_node_t *node){
             case_readDouble();
     }else if(strcmp(node->data.func.name, "ord") == 0){
             case_ord(node);
+    }else if(strcmp(node->data.func.name, "chr") == 0){
+            case_chr(node);
     }else {
         printf("CALL ");//dokoncit, velmi nedokoncene!!! 
         printf("%s", node->data.func.name);
