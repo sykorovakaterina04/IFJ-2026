@@ -112,6 +112,7 @@ static void cleanup_parser(tree_t *global_symtable,indent_stack_t *indent_stack 
     if (global_symtable != NULL) {
         symtable_destroy_tree(global_symtable);
     }
+    pending_calls_free();
 }
 
 // hotovo zatim az propojeni s lexerem
@@ -156,6 +157,9 @@ int parse_prologue(){
 int parse(void) {
     int result;
     int main = 0;
+    pending_calls.items = NULL; // reset 
+    pending_calls.count = 0;
+    pending_calls.capacity = 0;
     tree_t *global_symtable = symtable_init(NULL); // globalni tabulka pro funkce
     if (global_symtable == NULL) {
         return 99; // Interní chyba alokace
@@ -237,17 +241,17 @@ int parse(void) {
         }
     }
 
-
+    result = verify_pending_calls(global_symtable);
+    if (result != 0) {
+        cleanup_parser(global_symtable, &indent_stack);
+        return result;
+    }
 
     if(main != 1){
-        symtable_destroy_tree(global_symtable); // uklid
-        free_token(&current_token);
-        indent_free(&indent_stack);
+        cleanup_parser(global_symtable,&indent_stack);
         return 3; // CHYBA 
     }
-    indent_free(&indent_stack);
-    symtable_destroy_tree(global_symtable); // uklid
-    free_token(&current_token);
+    cleanup_parser(global_symtable,&indent_stack);
     return 0; // 
 }
 
@@ -341,7 +345,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
             return type_res; // v type res je ta chyba ktera se stala
         }
 
-        int ins_res = symtable_insert(local_symtable, param_name,PARAM,param_type,param_line,0,NULL);
+        int ins_res = symtable_insert(local_symtable, param_name,PARAM,param_type,param_line);
         free(param_name);
         if(ins_res != 0){
             free(*out_param_types);
@@ -416,7 +420,7 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable, inde
     case KEYWORD_VAR:
         res = parse_val_decl(global_symtable,local_symtable);
         return (res!= 0) ? res :expr_ended();
-    case TOKEN_IDENTIFIER:
+    case TOKEN_IDENTIFIER:{
         token_t next_token = peek_token();
         if(next_token.type == TOKEN_LPAREN){
             data_type_t tmp_ret;
@@ -430,7 +434,7 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable, inde
             res = parse_expression(global_symtable,local_symtable,&tmp_expr,false);
         }
         return (res != 0) ? res : expr_ended();
-   
+    }
     case KEYWORD_IF:
         return parse_if(global_symtable,local_symtable,indent_stack,func_return_type);
     case KEYWORD_WHILE:
@@ -438,10 +442,11 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable, inde
     case KEYWORD_RETURN:
         res = parse_return(global_symtable,local_symtable,func_return_type);
         return (res != 0) ? res : expr_ended();
-    default:
+    default:{
         data_type_t tmp_exp;
         res = parse_expression(global_symtable,local_symtable,&tmp_exp,false);
         return (res != 0) ? res : expr_ended();    
+    }
    }
 }
 
@@ -453,76 +458,183 @@ static int expr_ended(){
     return 0;
 }
 
-static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_return_type){
-    if(current_token.type != TOKEN_IDENTIFIER){
+//pomocne struktry, funkce
+typedef struct {
+    char *func_name;
+    data_type_t *arg_types;
+    int arg_count;
+} pending_call_t;
+
+typedef struct {
+    pending_call_t *items;
+    int count;
+    int capacity;
+} pending_call_list_t;
+
+static pending_call_list_t pending_calls = {NULL, 0, 0};
+
+static void pending_calls_free(void) {
+    for (int i = 0; i < pending_calls.count; i++) {
+        free(pending_calls.items[i].func_name);
+        free(pending_calls.items[i].arg_types);
+    }
+    free(pending_calls.items);
+    pending_calls.items = NULL;
+    pending_calls.count = 0;
+    pending_calls.capacity = 0;
+}
+
+static int pending_calls_add(const char *func_name, const data_type_t *arg_types, int arg_count) {
+    if (pending_calls.count >= pending_calls.capacity) {
+        int new_cap = (pending_calls.capacity == 0) ? 8 : pending_calls.capacity * 2;
+        pending_call_t *tmp = realloc(pending_calls.items, new_cap * sizeof(pending_call_t));
+        if (tmp == NULL) {
+            return 99;
+        }
+        pending_calls.items = tmp;
+        pending_calls.capacity = new_cap;
+    }
+
+    char *name_copy = malloc(strlen(func_name) + 1);
+    if (name_copy == NULL) {
+        return 99;
+    }
+    strcpy(name_copy, func_name);
+
+    data_type_t *types_copy = NULL;
+    if (arg_count > 0) {
+        types_copy = malloc(arg_count * sizeof(data_type_t));
+        if (types_copy == NULL) {
+            free(name_copy);
+            return 99;
+        }
+        memcpy(types_copy, arg_types, arg_count * sizeof(data_type_t));
+    }
+    pending_calls.items[pending_calls.count].func_name = name_copy;
+    pending_calls.items[pending_calls.count].arg_types = types_copy;
+    pending_calls.items[pending_calls.count].arg_count = arg_count;
+    pending_calls.count++;
+    return 0;
+}
+
+static int verify_pending_calls(tree_t *global_symtable) {
+    for (int i = 0; i < pending_calls.count; i++) {
+        pending_call_t *call = &pending_calls.items[i];
+        tdata_t *func_sym = symtable_lookup(global_symtable, call->func_name);
+        if (func_sym == NULL || func_sym->type != FUNCTION) {
+            return 3; // Nedefinovaná funkce[cite: 8]
+        }
+        if (call->arg_count != func_sym->param_count) {
+            return 5; // Špatný počet argumentů[cite: 8]
+        }
+        for (int j = 0; j < call->arg_count; j++) {
+            if (!is_type_compatible(call->arg_types[j], func_sym->param_types[j])) {
+                return 5; // Nekompatibilní typ argumentu[cite: 8]
+            }
+        }
+    }
+    return 0;
+}
+
+static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_return_type) {
+    if (current_token.type != TOKEN_IDENTIFIER) {
         return 2;
     }
-
-    tdata_t *func_sym = symtable_lookup(global_symtable,current_token.str_val);
-    if(func_sym == NULL || func_sym->type != FUNCTION){
-        return 3; //undefined funkce
+    char *func_name = malloc(strlen(current_token.str_val) + 1);
+    if (func_name == NULL) {
+        return 99;
     }
+    strcpy(func_name, current_token.str_val);
 
-    next();//na (
-    if(current_token.type != TOKEN_LPAREN){
+    next(); // na (
+    if (current_token.type != TOKEN_LPAREN) {
+        free(func_name);
         return 2;
     }
-    next();
+    next(); // za (
 
-    while (current_token.type == TOKEN_EOL){
+    while (current_token.type == TOKEN_EOL) {
         next();
     }
 
-
+    data_type_t *arg_types = NULL;
     int arg_count = 0;
 
-    if(current_token.type != TOKEN_RPAREN){
-        while(true){
+    if (current_token.type != TOKEN_RPAREN) {
+        while (true) {
             data_type_t arg_type;
-            int res = parse_expression(global_symtable,local_symtable,&arg_type,false);
-            if(res != 0){
+            int res = parse_expression(global_symtable, local_symtable, &arg_type, false);
+            if (res != 0) {
+                free(func_name);
+                free(arg_types);
                 return res;
             }
 
-            if(arg_count >= func_sym->param_count){
-                return 5; //moc argumentu
-
+            data_type_t *tmp = realloc(arg_types, (arg_count + 1) * sizeof(data_type_t));
+            if (tmp == NULL) {
+                free(func_name);
+                free(arg_types);
+                return 99;
             }
-            if(!is_type_compatible(arg_type,func_sym->param_types[arg_count])){
-                return 5; // spatny typ arg
-            }
+            arg_types = tmp;
+            arg_types[arg_count++] = arg_type;
 
-            arg_count++;
-
-            if(current_token.type == TOKEN_COMMA){
+            if (current_token.type == TOKEN_COMMA) {
                 next();
-                while(current_token.type == TOKEN_EOL){
+                while (current_token.type == TOKEN_EOL) {
                     next();
                 }
-            
-            }else{
-                while ( current_token.type == TOKEN_EOL)
-                {
+            } else {
+                while (current_token.type == TOKEN_EOL) {
                     next();
                 }
-                if(current_token.type == TOKEN_RPAREN){
+                if (current_token.type == TOKEN_RPAREN) {
                     break;
                 }
+                free(func_name);
+                free(arg_types);
                 return 2;
             }
-
-
         }
     }
 
-    if(arg_count !=func_sym->param_count){
-        return 5;//malo arg
+    next(); // za )
+
+
+    tdata_t *func_sym = symtable_lookup(global_symtable, func_name);
+    if (func_sym != NULL) {
+        if (func_sym->type != FUNCTION) {
+            free(func_name);
+            free(arg_types);
+            return 3;
+        }
+        if (arg_count != func_sym->param_count) {
+            free(func_name);
+            free(arg_types);
+            return 5;
+        }
+        for (int i = 0; i < arg_count; i++) {
+            if (!is_type_compatible(arg_types[i], func_sym->param_types[i])) {
+                free(func_name);
+                free(arg_types);
+                return 5;
+            }
+        }
+        *out_return_type = func_sym->data_type;
+    } else {
+        // funkce jeste nebyla defined
+        int add_res = pending_calls_add(func_name, arg_types, arg_count);
+        if (add_res != 0) {
+            free(func_name);
+            free(arg_types);
+            return add_res;
+        }
+        *out_return_type = TYPE_ANY;
     }
 
-    next(); //za )
-    *out_return_type = func_sym ->data_type;
+    free(func_name);
+    free(arg_types);
     return 0;
-
 }
 //prava strana za =/return
 static int parse_rs(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type){
@@ -608,7 +720,7 @@ static int parse_val_decl(tree_t *global_symtable,tree_t *local_symtable){
         final_type = rs_type;
     }
 
-    int ins_res = symtable_insert(local_symtable,var_name,is_const ? KONSTANT:VARIABLE, final_type,var_line,0,NULL);
+    int ins_res = symtable_insert(local_symtable,var_name,is_const ? KONSTANT:VARIABLE, final_type,var_line);
     free(var_name);
     if(ins_res!=0){
         return 99;
@@ -894,7 +1006,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
         }
     }
 
-    int ins_res = symtable_insert(global_symtable, func_name,FUNCTION,return_type,func_line,param_count,param_types);
+    int ins_res = symtable_insert(global_symtable, func_name,FUNCTION,return_type,func_line);
     free(func_name);
     free(param_types);
     if(ins_res!=0){
@@ -954,7 +1066,7 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
 
         
     if (symtable_lookup(global_symtable, current_token.str_val) == NULL) {
-        if(symtable_insert(global_symtable, current_token.str_val, FUNCTION, TYPE_UNIT, current_token.line,0,NULL) != 0){
+        if(symtable_insert(global_symtable, current_token.str_val, FUNCTION, TYPE_UNIT, current_token.line) != 0){
             return 99;
         }
         
@@ -1040,16 +1152,16 @@ int register_functions(tree_t *global_symtable){
     data_type_t p_ord[] = {TYPE_STRING,TYPE_INT};
 
     int control = 0;
-    control |= symtable_insert(global_symtable,"print",FUNCTION,TYPE_UNIT, 0,1,p_any );
-    control |= symtable_insert(global_symtable,"readLine",FUNCTION,TYPE_STRING, 0,0,NULL );
-    control |= symtable_insert(global_symtable,"readInt",FUNCTION,TYPE_INT, 0,0,NULL );
-    control |= symtable_insert(global_symtable,"readDouble",FUNCTION,TYPE_DOUBLE, 0,0,NULL);
-    control |= symtable_insert(global_symtable,"toStr",FUNCTION,TYPE_STRING, 0,1,p_any );
-    control |= symtable_insert(global_symtable,"toInt",FUNCTION,TYPE_INT, 0,1,p_double );
-    control |= symtable_insert(global_symtable,"strLength",FUNCTION,TYPE_INT, 0,1,p_string );
-    control |= symtable_insert(global_symtable,"subStr",FUNCTION,TYPE_STRING, 0,3,p_substr );
-    control |= symtable_insert(global_symtable,"ord",FUNCTION,TYPE_INT, 0,2,p_ord );
-    control |= symtable_insert(global_symtable,"chr",FUNCTION,TYPE_STRING, 0,1,p_int );
+    control |= symtable_insert_func(global_symtable, "print",      TYPE_UNIT,   0, 1, p_any);
+    control |= symtable_insert_func(global_symtable, "readLine",   TYPE_STRING, 0, 0, NULL);
+    control |= symtable_insert_func(global_symtable, "readInt",    TYPE_INT,    0, 0, NULL);
+    control |= symtable_insert_func(global_symtable, "readDouble", TYPE_DOUBLE, 0, 0, NULL);
+    control |= symtable_insert_func(global_symtable, "toStr",      TYPE_STRING, 0, 1, p_any);
+    control |= symtable_insert_func(global_symtable, "toInt",      TYPE_INT,    0, 1, p_double);
+    control |= symtable_insert_func(global_symtable, "strLength",  TYPE_INT,    0, 1, p_string);
+    control |= symtable_insert_func(global_symtable, "subStr",     TYPE_STRING, 0, 3, p_substr);
+    control |= symtable_insert_func(global_symtable, "ord",        TYPE_INT,    0, 2, p_ord);
+    control |= symtable_insert_func(global_symtable, "chr",        TYPE_STRING, 0, 1, p_int);
 
     if(control != 0 ){
         return 99;
