@@ -65,6 +65,8 @@ int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t
  */
 tdata_t *symtable_lookup(const tree_t *tree, const char *key);
 
+tdata_t *symtable_lookup_local(const tree_t *tree, const char *key);
+
 void symtable_destroy_tree(tree_t *tree);
 
 #endif

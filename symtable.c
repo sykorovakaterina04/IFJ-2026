@@ -40,6 +40,30 @@ tdata_t * symtable_lookup(const tree_t *tree, const char *key){
             return &(tmp->data);
         }
     }
+    return NULL;
+}
+
+tdata_t * symtable_lookup(const tree_t *tree, const char *key){
+
+    if(tree == NULL){
+        fprintf(stderr, "%s", "predany strom byl nulovy");
+        return NULL;
+    }
+
+    tnode_t *tmp = tree->root;
+
+    while(tmp != NULL){
+        int cmp = strcmp(key, tmp->key);
+        if(cmp < 0){
+            tmp = tmp->left;
+        }
+        if(cmp > 0){
+            tmp = tmp->right;
+        }
+        if (cmp == 0){
+            return &(tmp->data);
+        }
+    }
 
     if(tree->parent != NULL){
         symtable_lookup(tree->parent, key);
@@ -96,7 +120,11 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
         new_node->height = 1;
         new_node->data.type = type;
         new_node->data.data_type = data_type;
-        //if na modifiable
+        if(type == VARIABLE){
+            new_node->data.modifiable = true;
+        } else {
+            new_node->data.modifiable = false;
+        }
         new_node->data.line = line;
         new_node->data.param_count = param_count;
         new_node->data.param_types = param_types;
