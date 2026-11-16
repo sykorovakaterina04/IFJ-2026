@@ -171,6 +171,49 @@ void case_readDouble(void){
     printf("PUSHS GF@$tmp1\n");
 }
 
+void case_ord(ast_node_t *node){
+
+    if(node->data.func.args == NULL){
+        return;
+    }
+
+    static int cnt = 0;
+    int id = cnt++;
+
+    projdi_strom(node->data.func.args); //nahazi argumenty na zasobnik
+
+
+    //potreba udelat operace mimo zasobnik - argumenty 'vytahneme vem'
+    printf("POPS GF@$tmp2\n");//index
+    printf("POPS GF@$tmp1\n");//string
+
+    //"Je-li řetězec prázdný nebo index mimo rozsah, vrátí -1." -zadani
+
+    //pro index je negativni
+    //                   index <  0 ?
+    printf("LT GF@$tmp3 GF@$tmp2 int@0\n"); //je index mensi jak 0?
+    printf("JUMPIFEQ $wrong_input_ord_%d GF@$tmp3 bool@true\n", id); //LT ulozi bool hodnotu do GF@$tmp3
+
+    //pro index je vetsi nez delka reteze/ retezec je pradny (jeho delka je 0)
+    printf("STRLEN GF@$tmp4 GF@$tmp1\n"); //do GF@$tmp4 se ulozi delka retezce
+    printf("JUMPIFEQ $wrong_input_ord_%d GF@$tmp4 int@0\n", id); //pokud je delka 0, retezec je prazdny
+    //                  index < delka ?
+    printf("LT GF@$tmp3 GF@$tmp2 GF@$tmp4\n");//je index mensi nez delka retezce?
+    printf("JUMPIFEQ $wrong_input_ord_%d GF@$tmp3 bool@false\n", id); //pokud ne, skoc na chybu
+
+    printf("JUMP $all_ok_ord_%d\n", id);//pokud se beh nezastavil na zadnem erroru, preskocime prirazovani -1
+
+    printf("LABEL $wrong_input_ord_%d\n", id);
+    printf("MOVE GF@$tmp5 int@-1\n"); //pokud bylo aktivovano jedno z chybovych hlaseni, dej na zasobnik -1
+    printf("JUMP $ord_end_%d\n", id); //uz neni co resit, skoc na konec
+
+    printf("LABEL $all_ok_ord_%d\n", id);
+    //logika prevodu zanku na ascii kod
+    printf("STRI2INT GF@$tmp5 GF@$tmp1 GF@$tmp2\n"); //do GF@$tmp5 se ulozi ascii kod znaku
+    printf("LABEL $ord_end_%d\n", id);
+    printf("PUSHS GF@$tmp5\n");
+
+}
 
 //konec implementace vestavenych funkci
 
@@ -289,6 +332,8 @@ void ast_call(ast_node_t *node){
             case_readInt();
     }else if(strcmp(node->data.func.name, "readDouble") == 0){
             case_readDouble();
+    }else if(strcmp(node->data.func.name, "ord") == 0){
+            case_ord(node);
     }else {
         printf("CALL ");//dokoncit, velmi nedokoncene!!! 
         printf("%s", node->data.func.name);
