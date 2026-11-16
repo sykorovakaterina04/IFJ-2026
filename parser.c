@@ -6,13 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
-/// docasne symtable_lookup_local 
-
-static tdata_t *symtable_lookup_local(tree_t *local_symtable, const char *key);
-
-
-
 //pomocne fce pro parsovani bloku
 static int indent_top(const indent_stack_t *stack){
     return stack->items[stack->top];
@@ -80,7 +73,9 @@ void next(void){
     free_token(&current_token);
     if(looked_ahead){
         current_token = ahead_token;
+        
         looked_ahead = false;
+        free(&ahead_token);
     }else{
         current_token = get_token();
     }
@@ -401,7 +396,7 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable, inde
     case KEYWORD_VAL:
     case KEYWORD_VAR:
         res = parse_val_decl(global_symtable,local_symtable);
-        return (res!= 0) ? res :expect_stmt_end();
+        return (res!= 0) ? res :expr_ended();
     case TOKEN_IDENTIFIER:
         token_t next_token = peek_token();
         if(next_token.type == TOKEN_LPAREN){
@@ -440,7 +435,7 @@ static int expr_ended(){
 }
 
 static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_return_type){
-    if(current_token.type == TOKEN_IDENTIFIER){
+    if(current_token.type != TOKEN_IDENTIFIER){
         return 2;
     }
 
@@ -664,7 +659,13 @@ static int parse_if(tree_t *global_symtable, tree_t *local_symtable,indent_stack
         return res;
     }
 
-    if(current_token.type != KEYWORD_ELSE || current_token.line != if_col){
+    while (current_token.type == TOKEN_EOL)
+    {
+        next();
+    }
+    
+
+    if(current_token.type != KEYWORD_ELSE || current_token.col != if_col){
         return 2;
     }
     next(); //za else
@@ -680,9 +681,9 @@ static int parse_if(tree_t *global_symtable, tree_t *local_symtable,indent_stack
     }
 
     res = parse_block(global_symtable,else_symtable,indent_stack,func_return_type);
-    if(res!= 0){
-        return res;
-    }
+    symtable_destroy_tree(else_symtable);
+    
+    return res;
 }
 
 
@@ -746,12 +747,12 @@ static int parse_expression(tree_t *global_symtable, tree_t *local_symtable, dat
 
 
     if(current_token.type== TOKEN_EOL 
-        && current_token.type ==TOKEN_EOF
-        && current_token.type == TOKEN_SEMICOLON  
-        && current_token.type == KEYWORD_THEN  
-        && current_token.type == KEYWORD_DO  
-        && current_token.type == TOKEN_RPAREN  
-        && current_token.type ==TOKEN_COMMA){
+        || current_token.type ==TOKEN_EOF
+        || current_token.type == TOKEN_SEMICOLON  
+        || current_token.type == KEYWORD_THEN  
+        || current_token.type == KEYWORD_DO  
+        || current_token.type == TOKEN_RPAREN  
+        || current_token.type ==TOKEN_COMMA){
             return 2; // vyraz nesmi byt prazdny
         }
 
