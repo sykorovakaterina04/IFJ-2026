@@ -171,6 +171,7 @@ void case_readDouble(void){
     printf("PUSHS GF@$tmp1\n");
 }
 
+
 //konec implementace vestavenych funkci
 
 //funkce pro generovani literalu
@@ -284,6 +285,10 @@ void ast_call(ast_node_t *node){
             case_strLength(node);
     }else if(strcmp(node->data.func.name, "readLine") == 0){
             case_readLine();
+    }else if(strcmp(node->data.func.name, "readInt") == 0){
+            case_readInt();
+    }else if(strcmp(node->data.func.name, "readDouble") == 0){
+            case_readDouble();
     }else {
         printf("CALL ");//dokoncit, velmi nedokoncene!!! 
         printf("%s", node->data.func.name);

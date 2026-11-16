@@ -1,10 +1,15 @@
+#ifndef AST_H
+#define AST_H
+
+
 #include <stdlib.h>
 #include "symtable.h"
 
 typedef enum {
     AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
     AST_IF, AST_FOR, AST_WHILE, AST_CALL, 
-    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK
+    AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK,
+    AST_RETURN
 } ast_type_t;
 
 typedef enum {
@@ -12,7 +17,7 @@ typedef enum {
 } frame_t;
 
 typedef enum {
-    ADD, SUB, MUL, DIV, IDIV
+    ADD, SUB, MUL, DIV, IDIV, EQ, NEQ, LT, GT, LEQ, GEQ
 } binop_type_t;
 
 typedef enum {
@@ -50,27 +55,32 @@ struct ast_node{
         struct{
             char *name;
             ast_node_t *args;
+            ast_node_t *body;
         }func;
 
         struct {
             int i_val;
             double d_val;
             char *string_val;
-            var_type_t conversion_type;
+            data_type_t type;
+            data_type_t conversion_type;
         }literal;
 
         struct {
             char *name;
-            var_type_t type;
-            var_type_t conversion_type;
+            data_type_t type;
+            data_type_t conversion_type;
             frame_t frame;
         }variable;
 
         struct { 
             ast_node_t *first_line;
             tree_t *symtable;
-        } block;
+        }block;
 
+        struct {
+            ast_node_t *var;
+        }node_return;
     }data;
 };
 
@@ -82,3 +92,4 @@ ast_tree_t *ast_init();
 
 ast_node_t *ast_create_node(ast_type_t type);
 
+#endif
