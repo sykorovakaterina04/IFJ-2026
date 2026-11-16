@@ -15,13 +15,14 @@ typedef struct tdata{
     node_type_t type;
     data_type_t data_type; //aji return type v pripade funkci
     bool modifiable;
+    bool active;
     int line;
     int param_count;
     data_type_t *param_types;
 }tdata_t;
 
 typedef struct tnode{
-    const char* key;
+    char* key;
     tdata_t data;
     struct tnode *left;
     struct tnode *right;
@@ -54,7 +55,9 @@ tree_t *symtable_init(tree_t *parent);
  * @param param_types 
  * @return int 
  */
-int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data, int line, int param_count, data_type_t *param_types);
+int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data, int line);
+
+int symtable_insert_func(tree_t *tree, const char *key, data_type_t data_type, int line, int param_count, data_type_t *param_types);
 
 /**
  * @brief 
