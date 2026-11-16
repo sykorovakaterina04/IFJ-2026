@@ -28,6 +28,6 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack);
 int register_functions(tree_t *global_symtable);
 
 //bloky 
-int parse_block(tree_t *global_symtable,tree_t *local_symtable, indent_stack_t *indent_stack);
+int parse_block(tree_t *global_symtable,tree_t *local_symtable, indent_stack_t *indent_stack,data_type_t func_return_file);
 
 #endif
