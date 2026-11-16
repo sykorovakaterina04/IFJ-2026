@@ -7,7 +7,7 @@
 
 typedef enum {
     AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
-    AST_IF, AST_FOR, AST_WHILE, AST_CALL, 
+    AST_IF, AST_WHILE, AST_CALL, 
     AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK,
     AST_RETURN
 } ast_type_t;
@@ -100,9 +100,9 @@ ast_node_t *ast_create_block(tree_t *tree, ast_node_t *first_line);
 
 ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_body);
 
-ast_node_t *ast_create_var(char *name, var_type_t type, frame_t frame, int line);
+ast_node_t *ast_create_var(char *name, data_type_t type, frame_t frame, int line);
 
-ast_node_t *ast_create_var_def(char *name, var_type_t type, int line);
+ast_node_t *ast_create_var_def(char *name, data_type_t type, int line);
 
 ast_node_t *ast_create_while(ast_node_t *cond, ast_node_t *body);
 
@@ -115,6 +115,8 @@ ast_node_t *ast_create_literal_int(int value, int line);
 ast_node_t *ast_create_literal_double(double value, int line);
 
 ast_node_t *ast_create_literal_string(char *value, int line);
+
+ast_node_t *ast_create_literal_unit(int line);
 
 ast_node_t *ast_create_return(ast_node_t *var, int line);
 

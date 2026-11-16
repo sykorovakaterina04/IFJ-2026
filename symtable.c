@@ -26,6 +26,11 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
         return NULL;
     }
 
+    if(key == NULL ){
+        fprintf(stderr, "%s", "prednay klic je nulovy");
+        return NULL;
+    }
+
     tnode_t *tmp = tree->root;
 
     while(tmp != NULL){
@@ -45,28 +50,24 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
 
 tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
-    if(tree == NULL){
+    if(tree == NULL ){
         fprintf(stderr, "%s", "predany strom byl nulovy");
         return NULL;
     }
 
-    tnode_t *tmp = tree->root;
-
-    while(tmp != NULL){
-        int cmp = strcmp(key, tmp->key);
-        if(cmp < 0){
-            tmp = tmp->left;
-        }
-        if(cmp > 0){
-            tmp = tmp->right;
-        }
-        if (cmp == 0){
-            return &(tmp->data);
-        }
+    if(key == NULL ){
+        fprintf(stderr, "%s", "prednay klic je nulovy");
+        return NULL;
     }
 
-    if(tree->parent != NULL){
-        symtable_lookup(tree->parent, key);
+    tnode_t *tmp = tree->root;
+    tdata_t *data = NULL;
+    
+
+    while(tmp){
+        data = symtable_lookup(tree->parent, key);
+
+        if(!data && data->active) return data;
     }
     return NULL;
 }
@@ -101,6 +102,10 @@ static int symtable_getbalance(tnode_t *node){
     symtable_getheight(node->left) - symtable_getheight(node->right);
 }
 
+
+
+
+
 static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_type_t type, data_type_t data_type, int line, int param_count, data_type_t *param_types){
 
     if(node == NULL){
@@ -120,15 +125,27 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
         new_node->height = 1;
         new_node->data.type = type;
         new_node->data.data_type = data_type;
+
         if(type == VARIABLE){
             new_node->data.modifiable = true;
         } else {
             new_node->data.modifiable = false;
         }
+
+        if(new_node->data.type == FUNCTION || new_node->data.type == PARAM){
+            new_node->data.active = true;
+        }
+
         new_node->data.line = line;
         new_node->data.param_count = param_count;
-        new_node->data.param_types = param_types;
+        new_node->data.param_types = malloc(param_count * sizeof(data_type_t));
 
+        if(new_node->data.param_types == NULL){
+            fprintf(stderr, "%s", "chyba pri alokaci parametru");
+            exit(99);
+        }
+
+        memcpy(new_node->data.param_types, param_types, param_count * sizeof(data_type_t));
         return(new_node);
     }
     
@@ -168,7 +185,11 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
     return node;
 }
 
-int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data_type, int line, int param_count, data_type_t *param_types){
+
+
+
+
+int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data_type, int line){
 
     if (tree == NULL || key == NULL){
         fprintf(stderr, "%s", "spatne zadane paramery");
@@ -178,10 +199,31 @@ int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t
 
     
 
-    tree->root = symtable_insert_recursive(tree->root, key, type, data_type, line, param_count, param_types);
+    tree->root = symtable_insert_recursive(tree->root, key, type, data_type, line, 0, NULL);
 
     return 0;
 }
+
+
+
+int symtable_insert_func(tree_t *tree, const char *key, data_type_t data_type, int line, int param_count, data_type_t *param_types){
+
+    if (tree == NULL || key == NULL){
+        fprintf(stderr, "%s", "spatne zadane paramery");
+        return 1;
+    }
+
+
+    
+
+    tree->root = symtable_insert_recursive(tree->root, key, FUNCTION, data_type, line, param_count, param_types);
+
+    return 0;
+}
+
+
+
+
 
 static void symtable_destroy(tnode_t *node){
     if (node != NULL){
@@ -196,6 +238,10 @@ static void symtable_destroy(tnode_t *node){
     }
 
 }
+
+
+
+
 
 void symtable_destroy_tree(tree_t *tree){
     if (tree == NULL) return;
