@@ -42,6 +42,25 @@ static void indent_pop(indent_stack_t *stack){
     }
 }
 
+static int indent_init(indent_stack_t *stack) {
+    stack->capacity = 8;
+    stack->top = 0;
+    stack->items = malloc(stack->capacity * sizeof(int));
+    if (stack->items == NULL) {
+        return 99;
+    }
+    stack->items[0] = 1; 
+    return 0;
+}
+
+static void indent_free(indent_stack_t *stack) {
+    if (stack->items != NULL) {
+        free(stack->items);
+        stack->items = NULL;
+    }
+    stack->top = 0;
+    stack->capacity = 0;
+}
 
 token_t current_token;
 static token_t ahead_token;
@@ -75,9 +94,22 @@ void next(void){
         current_token = ahead_token;
         
         looked_ahead = false;
-        free(&ahead_token);
     }else{
         current_token = get_token();
+    }
+}
+
+static void cleanup_parser(tree_t *global_symtable,indent_stack_t *indent_stack ){
+    if (indent_stack != NULL) {
+        indent_free(indent_stack);
+    }
+    free_token(&current_token);
+    if (looked_ahead) {
+        free_token(&ahead_token);
+        looked_ahead = false;
+    }
+    if (global_symtable != NULL) {
+        symtable_destroy_tree(global_symtable);
     }
 }
 
@@ -933,8 +965,23 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
         return 2; // funkce nema telo
     }else {
         //dodelat jednoradkove telo funkce
-        while (current_token.type  != TOKEN_EOL && current_token.type != TOKEN_EOF){
-            next();}
+
+        data_type_t body_type;
+        res = parse_rs(global_symtable,local_symtable,&body_type);
+        if (res != 0){
+            symtable_destroy_tree(local_symtable);
+            return res;
+        }
+
+        if(!is_type_compatible(body_type,return_type)){
+            symtable_destroy_tree(local_symtable);
+            return 6;
+        }
+
+        if (current_token.type  != TOKEN_EOL && current_token.type != TOKEN_EOF){
+            symtable_destroy_tree(local_symtable);
+            return 2;
+        }
         
     }
     symtable_destroy_tree(local_symtable);
@@ -998,10 +1045,10 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
     if (local_symtable == NULL) {
         return 99; // Interní chyba alokace
     }
-    
+    int res = 0;
 
     if(current_token.type == TOKEN_EOL){
-        int res = parse_block(global_symtable,local_symtable,indent_stack,TYPE_UNIT);
+        res = parse_block(global_symtable,local_symtable,indent_stack,TYPE_UNIT);
         if (res != 0){
             symtable_destroy_tree(local_symtable);
             return res;
@@ -1011,12 +1058,20 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
         return 2; // funkce nema telo
     }else {
         //dodelat jednoradkove telo funkce
-        while (current_token.type  != TOKEN_EOL && current_token.type != TOKEN_EOF){
-            next();}
-        
+
+        data_type_t body_type;
+        res = parse_rs(global_symtable,local_symtable,&body_type);
+        if (res == 0){
+            if(!is_type_compatible(body_type,TYPE_UNIT)){
+                symtable_destroy_tree(local_symtable);
+                res =  6;
+            }else if(current_token.type  != TOKEN_EOL && current_token.type != TOKEN_EOF){
+                res = 2;
+            }
+        }
     }
     symtable_destroy_tree(local_symtable);
-    return 0; 
+    return res; 
 }
 
 int register_functions(tree_t *global_symtable){
