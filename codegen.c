@@ -182,7 +182,6 @@ void case_ord(ast_node_t *node){
 
     projdi_strom(node->data.func.args); //nahazi argumenty na zasobnik
 
-
     //potreba udelat operace mimo zasobnik - argumenty 'vytahneme vem'
     printf("POPS GF@$tmp2\n");//index
     printf("POPS GF@$tmp1\n");//string
@@ -223,6 +222,79 @@ void case_chr(ast_node_t *node){
     projdi_strom(node->data.func.args); 
 
     printf("INT2CHARS\n");
+}
+
+void case_subStr(ast_node_t *node){
+    
+     if(node->data.func.args == NULL){
+        return;
+    }
+
+    static int cnt = 0;
+    int id = cnt++;
+
+    projdi_strom(node->data.func.args); //nahazi argumenty na zasobnik
+
+    printf("POPS GF@$tmp3\n"); //end
+    printf("POPS GF@$tmp2\n"); //start
+    printf("POPS GF@$tmp1\n"); //string
+
+    //kontrola jestli index end neni negativni
+    //                    end < 0 ?
+    printf("LT GF@$tmp4 GF@$tmp3 int@0\n"); //GF@$tmp4 uklada bool hodnotu
+    printf("JUMPIFEQ $wrong_input_substr_%d GF@$tmp4 bool@true\n",id);
+
+    //kontrola jestli index start neni negativni
+    //                    start < 0 ?
+    printf("LT GF@$tmp4 GF@$tmp2 int@0\n"); //GF@$tmp4 uklada bool hodnotu
+    printf("JUMPIFEQ $wrong_input_substr_%d GF@$tmp4 bool@true\n",id);
+
+    //kontrola jestli start vetsi nez end
+    //                    start > end ?
+    printf("GT GF@$tmp4 GF@$tmp2 GF@$tmp3\n");
+    printf("JUMPIFEQ $wrong_input_substr_%d GF@$tmp4 bool@true\n",id);
+
+    //kontrola jestli delka retezce neni mensi nebo rovna indexu start
+    printf("STRLEN GF@$tmp5 GF@$tmp1\n");
+    //                    start > strlen(value)
+    printf("GT GF@$tmp4 GF@$tmp2 GF@$tmp5\n");
+    printf("JUMPIFEQ $wrong_input_substr_%d GF@$tmp4 bool@true\n",id);
+    //                    start = strlen(value)
+    printf("EQ GF@$tmp4 GF@$tmp2 GF@$tmp5\n");
+    printf("JUMPIFEQ $wrong_input_substr_%d GF@$tmp4 bool@true\n",id);
+
+    //kontrola jestli end neni vetsi nez delka retezce
+    printf("STRLEN GF@$tmp5 GF@$tmp1\n");
+    //                    start > strlen(value)
+    printf("GT GF@$tmp4 GF@$tmp3 GF@$tmp5\n");
+    printf("JUMPIFEQ $wrong_input_substr_%d GF@$tmp4 bool@true\n",id);
+
+    printf("JUMP $all_ok_subStr_%d\n", id);// vsechno ok, neni potreba program ukoncit, tak skaceme na reseni funkce
+
+    printf("LABEL $wrong_input_substr_%d\n", id);
+    printf("EXIT int@40\n");
+
+    printf("LABEL $all_ok_subStr_%d\n", id);
+
+    //do GF@$tmp5 ulozime prazdny retezec, aby se k nemu postupne pomoci CONCAT mohlo pridavat
+    //(celkovou delku retezce uz potreba nebude)
+    printf("MOVE GF@$tmp5 string@\n");
+    //navesti pro while-loop (start < end, start++)
+    printf("LABEL $loop_substr_%d\n", id);
+    //kontrola podminky
+    //                    start < end ?
+    printf("LT GF@$tmp4 GF@$tmp2 GF@$tmp3\n");
+    printf("JUMPIFEQ $end_substr_%d GF@$tmp4 bool@false\n", id); //podminka neplati, cas skoncit
+
+    //logika skladani noveho retezce
+    printf("GETCHAR GF@$tmp4 GF@$tmp1 GF@$tmp2\n"); //vytahneme znak na aktualnim indexu
+    printf("CONCAT GF@$tmp5 GF@$tmp5 GF@$tmp4\n"); //pridane znak do noveho retezce
+    printf("ADD GF@$tmp2 GF@$tmp2 int@1\n"); //zvyseni hodnoty indexu start o 1
+    printf("JUMP $loop_substr_%d\n", id); //zopakovani while-loopu, kontrola podminky...
+
+    printf("LABEL $end_substr_%d\n", id);
+    printf("PUSHS GF@$tmp5\n"); //posleme konecny podretezec na zasobnik
+
 }
 
 //konec implementace vestavenych funkci
@@ -302,7 +374,6 @@ void ast_binop(ast_node_t *node){
     }
 }
 
-
 //funkce pro pridani hodnoty do promenne
 void ast_assign(ast_node_t *node){
 
@@ -313,17 +384,8 @@ void ast_assign(ast_node_t *node){
 
 }
 
-//pocet volani parametru je soucasti symtable
-//lokalni promenne reseni semantika ?
-//telo funkce TODO
-void ast_func_def(ast_node_t *node){
-
-
-
-}
-
 //funkce pro volani funkci
-//TODO: NEDOKONCENE, potreba poresit logiku volani funkci + dalsi specialni volani funkci
+//TODO: NEDOKONCENE, potreba poresit logiku volani funkci
 void ast_call(ast_node_t *node){
 
     if (strcmp(node->data.func.name, "print") == 0){
@@ -344,6 +406,8 @@ void ast_call(ast_node_t *node){
             case_ord(node);
     }else if(strcmp(node->data.func.name, "chr") == 0){
             case_chr(node);
+    }else if(strcmp(node->data.func.name, "subStr") == 0){
+            case_subStr(node);
     }else {
         printf("CALL ");//dokoncit, velmi nedokoncene!!! 
         printf("%s", node->data.func.name);
@@ -354,27 +418,25 @@ void ast_call(ast_node_t *node){
 
 /*
 
+//pocet volani parametru je soucasti symtable
+//lokalni promenne reseni semantika ?
+//telo funkce TODO
+void ast_func_def(ast_node_t *node){
+
+}
+
 void ast_if(ast_node_t *node){
-
-
 
 }
 
 void ast_while(ast_node_t *node){
 
-
-
 }
-
 
 void ast_block(ast_node_t *node){
 
-
-
 }
 */
-
-        
 
 void projdi_strom(ast_node_t *node){
 
