@@ -172,3 +172,74 @@ ast_node_t *ast_create_return(ast_node_t *var, int line){
 
     return ast_return;
 }
+
+void ast_destroy_node(ast_node_t *node){
+
+    if(node == NULL){
+        return;
+    }
+    
+    switch(node->type){
+        case AST_ASSIGN:
+            ast_destroy_node(node->data.assign.dest);
+            ast_destroy_node(node->data.assign.source);
+            break;
+        
+        case AST_BINOP:
+            ast_destroy_node(node->data.binop.left);
+            ast_destroy_node(node->data.binop.right);
+            break;
+
+        case AST_BLOCK:
+            ast_destroy_node(node->data.block.first_line);
+            symtable_destroy_tree(node->data.block.symtable);
+            break;
+
+        case AST_IF:
+            ast_destroy_node(node->data.condicionals.cond);
+            ast_destroy_node(node->data.condicionals.body);
+            ast_destroy_node(node->data.condicionals.else_body);
+            break;
+
+        case AST_WHILE:
+            ast_destroy_node(node->data.condicionals.cond);
+            ast_destroy_node(node->data.condicionals.body);
+            break;
+
+        case AST_FUNC_DEF:
+            ast_destroy_node(node->data.func.args);
+            ast_destroy_node(node->data.func.body);
+            free(node->data.func.name);
+            break;
+
+        case AST_CALL:
+            ast_destroy_node(node->data.func.args);
+            free(node->data.func.name);
+            break;
+
+        case AST_VAR_DEF:
+            free(node->data.variable.name);
+            break;
+
+        case AST_VAR:
+            free(node->data.variable.name);
+            break;
+
+        case AST_LITERAL:
+            if(node->data.literal.type == TYPE_STRING){
+                free(node->data.literal.string_val);
+            }
+            break;
+    }
+    ast_destroy_node(node->next);
+    free(node);
+}
+
+void ast_destroy_tree(ast_tree_t *tree){
+    if(tree == NULL){
+        return;
+    }
+
+    ast_destroy_node(tree->root);
+    free(tree);
+}
