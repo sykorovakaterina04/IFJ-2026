@@ -443,36 +443,93 @@ void ast_call(ast_node_t *node){
     
 }
 
+
 void ast_if(ast_node_t *node){
+
+    static int cnt = 0;
+    int id = cnt++;
+
+    if(node->data.condicionals.cond == NULL){
+        return;
+    } else if (node->data.condicionals.else_body == NULL){
+
+        projdi_strom(node->data.condicionals.cond);
+
+        printf("PUSHS bool@false\n");
+        printf("JUMPIFEQS $if_end_%d\n", id);
+
+        projdi_strom(node->data.condicionals.body);
+
+        printf("LABEL $if_end_%d\n", id);
+    } else {
+
+        projdi_strom(node->data.condicionals.cond);
+
+        printf("PUSHS bool@false\n");
+        printf("JUMPIFEQS $else_body_%d\n", id);
+
+        projdi_strom(node->data.condicionals.body);
+        printf("JUMP $if_end_%d\n", id);
+
+        printf("LABEL $else_body_%d\n", id);
+        projdi_strom(node->data.condicionals.else_body);
+
+        printf("LABEL $if_end_%d\n", id);
+
+    }
+
+}
+
+void ast_while(ast_node_t *node){
+
+    static int cnt = 0;
+    int id = cnt++;
+
+    if(node->data.condicionals.cond == NULL){
+        return;
+    } else {
+
+        printf("LABEL $while_top_%d\n",id);
+        projdi_strom(node->data.condicionals.cond);
+
+        printf("PUSHS bool@false\n");
+        printf("JUMPIFEQS $while_end_%d\n",id);
+
+        projdi_strom(node->data.condicionals.body);
+        printf("JUMP $while_top_%d\n", id);
+
+        printf("LABEL $while_end_%d\n", id);
+    }
 
 }
 
 /*
 
-//pocet volani parametru je soucasti symtable
-//lokalni promenne reseni semantika ?
-//telo funkce TODO
+
 void ast_func_def(ast_node_t *node){
 
 }
 
+void ast_return(ast_node_t *node){
 
-
-void ast_while(ast_node_t *node){
 
 }
+
 
 void ast_block(ast_node_t *node){
 
-}
-*/
-
-void projdi_strom(ast_node_t *node){
-
-    if(node == NULL){
+    if(node->data.block.first_line == NULL){
         return;
     }
-    while(node != NULL){
+
+
+}
+
+
+*/
+
+void zpracuj_uzel(ast_node_t *node){
+
         switch (node->type){
             case AST_LITERAL: 
                     ast_literal(node);
@@ -484,7 +541,7 @@ void projdi_strom(ast_node_t *node){
                     ast_var_def(node);
                 break;
             case AST_VAR:
-                    ast_var(node);//WIP1
+                    ast_var(node);
                 break;
             case AST_CALL:
                     ast_call(node);
@@ -492,27 +549,40 @@ void projdi_strom(ast_node_t *node){
             case AST_ASSIGN:
                     ast_assign(node);
                 break;
+            case AST_IF:
+                    ast_if(node);
+                break;
+            case AST_WHILE:
+                    ast_while(node);
+                break;
             case AST_FUNC_DEF:
                 //WIP3
                 break;
-            case AST_IF:
-                //WIP4
-                break;
-            case AST_WHILE:
+            case AST_BLOCK:
                 //TODO
                 break;
-            case AST_BLOCK:
+            case AST_RETURN:
                 //TODO
                 break;
             default:
                 break;
     }
+
+}
+
+void projdi_strom(ast_node_t *node){
+
+    if(node == NULL){
+        return;
+    }
+    while(node != NULL){
+        zpracuj_uzel(node);
     node = node->next;
     }
 
 }
 
-void generuj_kodu(ast_tree_t *tree){
+void generuj_kod(ast_tree_t *tree){
 
     //vygeneruje hlavičku
     printf(".IFJcode26\n");
