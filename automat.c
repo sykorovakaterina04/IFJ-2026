@@ -1,9 +1,14 @@
 #include "automat.h"
 #include <ctype.h>
 
+// globalni konstanty pro funkce str_init a keyword_type
 #define INITIAL_STRING_CAPACITY 16
 #define KEYWORDS_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
+/**
+ * @brief	Vyctovy typ pro stavy konecneho automatu
+ *
+ */
 typedef enum {
 	KA_START,
 	KA_GREATER,
@@ -42,11 +47,19 @@ typedef enum {
 	KA_DOUBLE_EXP_UNDERSCORE
 } ka_states;
 
+/**
+ * @brief	Struktura pro prirazeni klicoveho slova k tokenu
+ *
+ */
 typedef struct {
 	const char *keyword;
 	token_type_t type;
 } keyword_entry_t;
 
+/**
+ * @brief	Pole dvojic klicovych slov a odpovidajicich tokenu
+ *
+ */
 static const keyword_entry_t keywords[] = {
 	{"def", KEYWORD_DEF},		{"do", KEYWORD_DO},
 	{"Double", KEYWORD_DOUBLE}, {"else", KEYWORD_ELSE},
@@ -57,25 +70,30 @@ static const keyword_entry_t keywords[] = {
 	{"var", KEYWORD_VAR},		{"while", KEYWORD_WHILE},
 };
 
+// staticke promenne pro udrzeni radku a sloupce ve vstupnim souboru
 static int current_line = 1;
 static int current_col = 0;
 static int prev_col = 0;
+// staticke promenne hlidani zacatku radku a detekci tab
 static int tab_seen = 0;
 static int at_line_start = 1;
 
 int str_init(string_t *s) {
+	// nastaveni kapacity a malloc nad daty nacteneho stringu
 	s->capacity = INITIAL_STRING_CAPACITY;
 	s->data = (char *)malloc(s->capacity * sizeof(char));
 	if (s->data == NULL) {
 		fprintf(stderr, "Chyba: neuspesny malloc!\n");
 		return 0;
 	}
+	// nastaveni nulove delky a prazdneho stringu
 	s->length = 0;
 	s->data[0] = '\0';
 	return 1;
 }
 
 int str_add_char(string_t *s, char c) {
+	// kontrola, jestli je potreba provest realokaci
 	if (s->length + 1 >= s->capacity) {
 		char *tmp;
 		s->capacity = 2 * s->capacity;
@@ -86,21 +104,32 @@ int str_add_char(string_t *s, char c) {
 		}
 		s->data = tmp;
 	}
+	// prirazeni znaku do pole dat
 	s->data[s->length] = c;
+	// zvyseni delky retezce
 	s->length++;
+	// nastaveni konce stringu
 	s->data[s->length] = '\0';
 	return 1;
 }
 
 void str_free(string_t *s) {
+	// pokud obsahuje string nejaka data, provede se nad nimi free
 	if (s->data != NULL) {
 		free(s->data);
 		s->data = NULL;
 	}
+	// nastaveni delky a kapacity stringu na nulu
 	s->length = 0;
 	s->capacity = 0;
 }
 
+/**
+ * @brief Funkce pro prirazeni klicoveho slova
+ *
+ * @param str					Retezec s nactenym slovem
+ * @return token_type_t	vraci 	Typ tokenu (klicove slovo nebo TOKEN_IDENTIFIER)
+ */
 token_type_t keyword_type(const char *str) {
 	for (size_t i = 0; i < KEYWORDS_COUNT; i++) {
 		if (strcmp(str, keywords[i].keyword) == 0) {
@@ -110,6 +139,13 @@ token_type_t keyword_type(const char *str) {
 	return TOKEN_IDENTIFIER;
 }
 
+/**
+ * @brief	Funkce pro nacitani vstupu, zaroven aktualizujici polohu ve vstupnim
+ * souboru
+ *
+ * @param fptr	Vstupni soubor
+ * @return int	Nacteny znak jako int nebo EOF
+ */
 int my_fgetc(FILE *fptr) {
 	int c = fgetc(fptr);
 	if (c == '\n') {
@@ -124,6 +160,13 @@ int my_fgetc(FILE *fptr) {
 	return c;
 }
 
+/**
+ * @brief	Funkce pro navrat znaku zpet do vstupniho souboru, zaroven
+ * aktualizujici polohu ve vstupnim souboru
+ *
+ * @param c		Navraceny znak
+ * @param fptr	Vstupni soubor
+ */
 void my_ungetc(int c, FILE *fptr) {
 	ungetc(c, fptr);
 	if (c == '\n') {
@@ -136,6 +179,8 @@ void my_ungetc(int c, FILE *fptr) {
 	}
 }
 
+// funkce konecneho automatu prirazujici odpovidajici tokeny nactenym znakum ze
+// vstupniho souboru
 token_t automat(FILE *fptr) {
 
 	string_t buffer;
@@ -152,6 +197,7 @@ token_t automat(FILE *fptr) {
 		c = my_fgetc(fptr);
 		switch (state) {
 		case KA_START:
+			// zpracovani konce souboru (EOF)
 			if (c == EOF) {
 				token.type = TOKEN_EOF;
 				token.str_val = NULL;
@@ -159,6 +205,7 @@ token_t automat(FILE *fptr) {
 				token.col = current_col;
 				return token;
 			}
+			// zpracovani konce radku a kontrola odsazeni/tabulatoru
 			if (c == '\n') {
 				at_line_start = 1;
 				tab_seen = 0;
@@ -177,6 +224,7 @@ token_t automat(FILE *fptr) {
 				}
 				continue; // preskoceni bilych znaku
 			}
+			// kontrola zakazaneho tabulatoru na zacatku neprazdneho radku
 			if (at_line_start == 1 && tab_seen == 1) {
 				fprintf(stderr,
 						"Lexikalni chyba: Tabulator na neprazdnem radku\n");
@@ -185,6 +233,7 @@ token_t automat(FILE *fptr) {
 			at_line_start = 0;
 			token_start_line = current_line;
 			token_start_col = current_col;
+			// jednoznakove operatory a oddelovace
 			if (c == '+') {
 				token.type = TOKEN_ADD;
 				token.str_val = NULL;
@@ -297,6 +346,7 @@ token_t automat(FILE *fptr) {
 			}
 			fprintf(stderr, "Lexikalni chyba: neocekavany znak '%c'\n", c);
 			exit(1);
+		// zpracovani vicestavovych operatoru
 		case KA_LESS:
 			if (c == '=') {
 				token.type = TOKEN_LESS_EQUAL;
@@ -360,6 +410,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			}
 			break;
+		// zpracovani identifikatoru a klicovych slov
 		case KA_ID:
 			if (isalnum(c) || c == '_') {
 				str_add_char(&buffer, c);
@@ -384,6 +435,7 @@ token_t automat(FILE *fptr) {
 				return token;
 			}
 			break;
+		// posloupnost stavu pro kontrolu anotace @main
 		case KA_AT_M:
 			if (c == 'm') {
 				state = KA_AT_A;
@@ -423,6 +475,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			}
 			break;
+		// rozcestnik pro deleni, jednoradkovy a blokovy komentar
 		case KA_SLASH:
 			if (c == '/') {
 				state = KA_LINE_COMMENT;
@@ -449,6 +502,7 @@ token_t automat(FILE *fptr) {
 				state = KA_START;
 			}
 			break;
+		// blokove komentare
 		case KA_BLOCK_COMMENT:
 			if (c == '*') {
 				state = KA_BLOCK_COMMENT_END;
@@ -519,6 +573,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			}
 			break;
+		// stavy pro retezcovy literal
 		case KA_STRING_FIRST_QUOTE:
 			if (c == '"') {
 				state = KA_STRING_SECOND_QUOTE;
@@ -592,6 +647,7 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 			}
 			break;
+		// zpracovani escape sekvenci v retezcovych literalech
 		case KA_STRING_ESCAPE:
 			if (c == 'n') {
 				str_add_char(&buffer, '\n');
@@ -613,6 +669,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			}
 			break;
+		// sekvence stavu pro ukonceni viceradkoveho literalu
 		case KA_MULTILINE_STRING_END_1:
 			if (c == '"') {
 				state = KA_MULTILINE_STRING_END_2;
@@ -654,6 +711,7 @@ token_t automat(FILE *fptr) {
 				state = KA_MULTILINE_STRING;
 			}
 			break;
+		// ciselne literaly - kontrola nul na zacatku a podtrzitek
 		case KA_ZERO:
 			if (isdigit(c)) {
 				fprintf(stderr, "Lexikalni chyba: Cislo nesmi zacinat nulou\n");
@@ -677,6 +735,7 @@ token_t automat(FILE *fptr) {
 				return token;
 			}
 			break;
+		// sekvence stavu pro celociselny literal
 		case KA_INT:
 			if (isdigit(c)) {
 				str_add_char(&buffer, c);
@@ -708,6 +767,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			}
 			break;
+		// sekvence stavu pro desetinny literal
 		case KA_DOUBLE_DOT:
 			if (isdigit(c)) {
 				str_add_char(&buffer, c);
