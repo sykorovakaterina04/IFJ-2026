@@ -138,14 +138,19 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
 
         new_node->data.line = line;
         new_node->data.param_count = param_count;
-        new_node->data.param_types = malloc(param_count * sizeof(data_type_t));
+        if(param_types){
 
-        if(new_node->data.param_types == NULL){
-            fprintf(stderr, "%s", "chyba pri alokaci parametru");
-            exit(99);
+            new_node->data.param_types = malloc(param_count * sizeof(data_type_t));
+            
+            if(new_node->data.param_types == NULL){
+                fprintf(stderr, "%s", "chyba pri alokaci parametru");
+                exit(99);
+            }
+        
+            memcpy(new_node->data.param_types, param_types, param_count * sizeof(data_type_t));
+        
         }
 
-        memcpy(new_node->data.param_types, param_types, param_count * sizeof(data_type_t));
         return(new_node);
     }
     
@@ -231,7 +236,7 @@ static void symtable_destroy(tnode_t *node){
         symtable_destroy(node->right);
         free(node->key);
 
-        if(node->data.type == FUNCTION && node->data.param_types != NULL){
+        if(node->data.type == FUNCTION){
             free(node->data.param_types);
         }
         free(node);
