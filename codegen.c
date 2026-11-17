@@ -19,7 +19,7 @@ void print_literal(ast_node_t *node){
                         printf("\\092");
                     } else if (node->data.literal.string_val[i] == 35){
                         printf("\\035");
-                    } else if (node->data.literal.string_val[i] <= 32){
+                    } else if (node->data.literal.string_val[i] < 32){
                         printf("\\%03d",node->data.literal.string_val[i]); //pokud je hodnota znaku <= 32, kod vypise ciselnou hodnotu ve formatu \0xx
                     } else {
                         printf("%c",node->data.literal.string_val[i]);
@@ -65,20 +65,12 @@ void case_print(ast_node_t *node){
     if(node->data.func.args->return_type == TYPE_UNIT){
         printf("WRITE string@()");
     } else {
-        printf("WRITE ");
-            switch (node->data.func.args->type){
-                case AST_LITERAL:
-                    print_literal(node->data.func.args);
-                    break;
-                case AST_VAR:
-                    print_var(node->data.func.args);
-                    break;
-                default:
-                    break;
+
+        projdi_strom(node->data.func.args);
+        printf("POPS GF@$tmp1\n");
+        printf("WRITE GF@$tmp1\n");
 
     }
-    }
-    printf("\n");
 }
 
 void case_toStr(ast_node_t *node){
@@ -128,7 +120,7 @@ void case_strLength(ast_node_t *node){
     projdi_strom(node->data.func.args);
 
     printf("POPS GF@$tmp1\n");
-    printf("STRLEN GF@$tmp1 GF@_tmp1\n");
+    printf("STRLEN GF@$tmp1 GF@$tmp1\n");
     printf("PUSHS GF@$tmp1\n");
 
 }
@@ -416,7 +408,6 @@ void ast_call(ast_node_t *node){
     
 }
 
-/*
 
 //pocet volani parametru je soucasti symtable
 //lokalni promenne reseni semantika ?
@@ -425,6 +416,8 @@ void ast_func_def(ast_node_t *node){
 
 }
 
+/*
+ 
 void ast_if(ast_node_t *node){
 
 }
