@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-typedef enum {TYPE_INT, TYPE_DOUBLE, TYPE_STRING, TYPE_UNIT, TYPE_ANY} data_type_t;
+typedef enum {TYPE_INT, TYPE_BOOL, TYPE_DOUBLE, TYPE_STRING, TYPE_UNIT, TYPE_ANY} data_type_t;
 
 typedef enum {FUNCTION, VARIABLE, KONSTANT, PARAM} node_type_t;
 

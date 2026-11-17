@@ -1,7 +1,14 @@
+#ifndef AUTOMAT_H
+#define AUTOMAT_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief	Vyctovy typ pro typy tokenu
+ *
+ */
 typedef enum {
 	// ridici tokeny
 	TOKEN_EOF = 0,
@@ -63,12 +70,20 @@ typedef enum {
 
 } token_type_t;
 
+/**
+ * @brief	Struktura dynamickeho retezce
+ *
+ */
 typedef struct {
 	char *data;
 	int length;
 	int capacity;
 } string_t;
 
+/**
+ * @brief	Struktura tokenu
+ *
+ */
 typedef struct {
 	token_type_t type;
 	int line;
@@ -80,10 +95,38 @@ typedef struct {
 	};
 } token_t;
 
+/**
+ * @brief	Hlavni funkce konecneho automatu pro lexikalni analyzu, ktera
+ * nactene znaky ze vstupniho souboru sklada do tokenu
+ *
+ * @param fptr		Ukazatel na vstupni soubor
+ * @return token_t	Vraci strukturu nacteneho tokenu
+ */
 token_t automat(FILE *fptr);
 
+/**
+ * @brief	Funkce pro inicializaci dynamickeho retezce a alokaci pocatecni
+ * pameti
+ *
+ * @param s		retezec, pro ktery ma byt pamet alokovana
+ * @return int	1 v pripade uspechu, 0 v pripade neuspechu
+ */
 int str_init(string_t *s);
 
+/**
+ * @brief	Funkce pro pridani znaku do alokovaneho retezce
+ *
+ * @param s		retezec, do ktereho bude znak pridan
+ * @param c		znak, ktery ma byt pridan do retezce
+ * @return int	1 v pripade uspechu, 0 v pripade neuspechu
+ */
 int str_add_char(string_t *s, char c);
 
+/**
+ * @brief	Funkce pro uvolneni alokovane pameti retezce
+ *
+ * @param s	retezec, jehoz pamet ma byt uvolnena
+ */
 void str_free(string_t *s);
+
+#endif

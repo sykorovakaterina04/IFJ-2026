@@ -26,6 +26,11 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
         return NULL;
     }
 
+    if(key == NULL ){
+        fprintf(stderr, "%s", "prednay klic je nulovy");
+        return NULL;
+    }
+
     tnode_t *tmp = tree->root;
 
     while(tmp != NULL){
@@ -45,28 +50,24 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
 
 tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
-    if(tree == NULL){
+    if(tree == NULL ){
         fprintf(stderr, "%s", "predany strom byl nulovy");
         return NULL;
     }
 
-    tnode_t *tmp = tree->root;
-
-    while(tmp != NULL){
-        int cmp = strcmp(key, tmp->key);
-        if(cmp < 0){
-            tmp = tmp->left;
-        }
-        if(cmp > 0){
-            tmp = tmp->right;
-        }
-        if (cmp == 0){
-            return &(tmp->data);
-        }
+    if(key == NULL ){
+        fprintf(stderr, "%s", "prednay klic je nulovy");
+        return NULL;
     }
 
-    if(tree->parent != NULL){
-        symtable_lookup(tree->parent, key);
+    tnode_t *tmp = tree->root;
+    tdata_t *data = NULL;
+    
+
+    while(tmp){
+        data = symtable_lookup(tree->parent, key);
+
+        if(!data && data->active) return data;
     }
     return NULL;
 }
@@ -137,14 +138,19 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
 
         new_node->data.line = line;
         new_node->data.param_count = param_count;
-        new_node->data.param_types = malloc(param_count * sizeof(data_type_t));
+        if(param_types){
 
-        if(new_node->data.param_types == NULL){
-            fprintf(stderr, "%s", "chyba pri alokaci parametru");
-            exit(99);
+            new_node->data.param_types = malloc(param_count * sizeof(data_type_t));
+
+            if(new_node->data.param_types == NULL){
+                fprintf(stderr, "%s", "chyba pri alokaci parametru");
+                exit(99);
+            }
+
+            memcpy(new_node->data.param_types, param_types, param_count * sizeof(data_type_t));
+
         }
 
-        memcpy(new_node->data.param_types, param_types, param_count * sizeof(data_type_t));
         return(new_node);
     }
     
@@ -159,23 +165,21 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
 
     node->height = symtable_max(symtable_getheight(node->left), symtable_getheight(node->right)) + 1;
 
-    int balance = symtable_getbalance(node);
-
-    if (balance > 1){
-        if(strcmp(key, node->left->key) < 0){
+    if (symtable_getbalance(node) > 1){
+        if(symtable_getbalance(node->left) >= 0){
             return symtable_rrotate(node);
         }
-        if(strcmp(key, node->left->key) > 0){
+        if(symtable_getbalance(node->left) < 0){
             node->left = symtable_lrotate(node->left);
             return symtable_rrotate(node);
         }  
     }
 
-    if (balance < -1){
-        if(strcmp(key, node->right->key) > 0){
+    if (symtable_getbalance(node) < -1){
+        if(symtable_getbalance(node->right) <= 0){
             return symtable_lrotate(node);
         }
-        if(strcmp(key, node->right->key) < 0){
+        if(symtable_getbalance(node) > 0){
             node->right = symtable_rrotate(node->right);
             return symtable_lrotate(node);
         }  
@@ -230,7 +234,7 @@ static void symtable_destroy(tnode_t *node){
         symtable_destroy(node->right);
         free(node->key);
 
-        if(node->data.type == FUNCTION && node->data.param_types != NULL){
+        if(node->data.type == FUNCTION){
             free(node->data.param_types);
         }
         free(node);
