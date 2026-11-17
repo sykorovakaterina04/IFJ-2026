@@ -8,6 +8,24 @@ void print_var(ast_node_t *node);
 
 void case_print(ast_node_t *node);
 
+void case_toStr(ast_node_t *node);
+
+void case_toInt(ast_node_t *node);
+
+void case_strLength(ast_node_t *node);
+
+void case_readLine(void);
+
+void case_readInt(void);
+
+void case_readDouble(void);
+
+void case_ord(ast_node_t *node);
+
+void case_chr(ast_node_t *node);
+
+void case_subStr(ast_node_t *node);
+
 void ast_literal(ast_node_t *node);
 
 void ast_var_def(ast_node_t *node);
@@ -19,6 +37,8 @@ void ast_binop(ast_node_t *node);
 void ast_assign(ast_node_t *node);
 
 void ast_call(ast_node_t *node);
+
+void ast_if(ast_node_t *node);
 
 void projdi_strom(ast_node_t *node);
 

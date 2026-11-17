@@ -413,7 +413,6 @@ void ast_assign(ast_node_t *node){
 
 //funkce pro volani funkci
 //TODO: NEDOKONCENE, potreba poresit logiku volani funkci
-//predelat na switch case? 
 void ast_call(ast_node_t *node){
 
     if (strcmp(node->data.func.name, "print") == 0){
@@ -444,6 +443,11 @@ void ast_call(ast_node_t *node){
     
 }
 
+void ast_if(ast_node_t *node){
+
+}
+
+/*
 
 //pocet volani parametru je soucasti symtable
 //lokalni promenne reseni semantika ?
@@ -452,11 +456,7 @@ void ast_func_def(ast_node_t *node){
 
 }
 
-/*
- 
-void ast_if(ast_node_t *node){
 
-}
 
 void ast_while(ast_node_t *node){
 
