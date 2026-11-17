@@ -63,7 +63,7 @@ void case_print(ast_node_t *node){
     }
 
     if(node->data.func.args->return_type == TYPE_UNIT){
-        printf("WRITE string@()");
+        printf("WRITE string@()\n");
     } else {
 
         projdi_strom(node->data.func.args);
@@ -298,8 +298,8 @@ void ast_literal(ast_node_t *node){
     printf("\n");
 
      //pripad kdy conversion_type neni shodny s type
-      if(node->data.literal.conversion_type != node->return_type){
-        if((node->return_type == INT) && (node->data.literal.conversion_type == DOUBLE)){
+      if(node->data.literal.conversion_type != node->data.literal.type){
+        if((node->return_type == TYPE_INT) && (node->data.literal.conversion_type == TYPE_DOUBLE)){
             printf("INT2FLOATS\n");
         }
       }
@@ -323,14 +323,14 @@ void ast_var(ast_node_t *node){
 
       //pripad kdy conversion_type neni shodny s type
       if(node->data.variable.conversion_type != node->data.variable.type){
-        if((node->data.variable.type == INT) && (node->data.variable.conversion_type == DOUBLE)){
+        if((node->data.variable.type == TYPE_INT) && (node->data.variable.conversion_type == TYPE_DOUBLE)){
             printf("INT2FLOATS\n");
         }
       }
 }
 
 //funkce pro genrovani binarnich operaci
-//TODO, potreba upravit ast, dokoncit zbytek operaci, potreba poresit pripady kdy potreba poresit konverze mezi datovymi typy
+//TODO potreba poresit pripady kdy potreba poresit konverze mezi datovymi typy
 void ast_binop(ast_node_t *node){
 
     projdi_strom(node->data.binop.left);
@@ -339,7 +339,7 @@ void ast_binop(ast_node_t *node){
     switch (node->data.binop.type){
         case ADD:
         if(node->return_type == TYPE_STRING){
-            //volani CONVCAT neni zasobnikova funkce, potreba si projpucit dve z GF@_tmpx
+            //volani CONCAT neni zasobnikova funkce, potreba si projpucit dve promenne z GF@$tmpx
             printf("POPS GF@$tmp2\n"); //prava strana
             printf("POPS GF@$tmp1\n");  //leva strana
             printf("CONCAT GF@$tmp1 GF@$tmp1 GF@$tmp2\n");
@@ -360,6 +360,21 @@ void ast_binop(ast_node_t *node){
         case DIV:
             printf("DIVS\n");
             break;
+        case EQ:
+            printf("EQS\n");
+        case NEQ:
+            printf("EQS\n");
+            printf("NOTS\n");
+        case LT:
+            printf("LTS\n");
+        case GT:
+            printf("GTS\n");
+        case LEQ:
+            printf("GTS\n");
+            printf("NOTS\n");
+        case GEQ:
+            printf("LTS\n");
+            printf("NOTS\n");
         default:
             break;
         
