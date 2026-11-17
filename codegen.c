@@ -334,7 +334,21 @@ void ast_var(ast_node_t *node){
 void ast_binop(ast_node_t *node){
 
     projdi_strom(node->data.binop.left);
+    //pokud argument neni var ani literal je stale potreba overit jestli jsou typy shodne
+    if((node->data.binop.left->return_type == TYPE_INT) && (node->data.binop.right->return_type == TYPE_DOUBLE)){
+        //pojistka proti double konverzi
+        if((node->data.binop.left->type != AST_LITERAL) && (node->data.binop.left->type != AST_VAR)){
+            printf("INT2FLOATS\n");
+        }
+    }
     projdi_strom(node->data.binop.right);
+     if((node->data.binop.left->return_type == TYPE_DOUBLE) && (node->data.binop.right->return_type == TYPE_INT)){
+        if((node->data.binop.right->type != AST_LITERAL) && (node->data.binop.right->type != AST_VAR)){
+            printf("INT2FLOATS\n");
+        }
+    }
+
+    //kontroly pro konverze preskoci kdyz se node == TYPE_STRING, ten se bude resit specialnim pripadem CONCAT 
 
     switch (node->data.binop.type){
         case ADD:
@@ -362,19 +376,25 @@ void ast_binop(ast_node_t *node){
             break;
         case EQ:
             printf("EQS\n");
+            break;
         case NEQ:
             printf("EQS\n");
             printf("NOTS\n");
+            break;
         case LT:
             printf("LTS\n");
+            break;
         case GT:
             printf("GTS\n");
+            break;
         case LEQ:
             printf("GTS\n");
             printf("NOTS\n");
+            break;
         case GEQ:
             printf("LTS\n");
             printf("NOTS\n");
+            break;
         default:
             break;
         
@@ -393,6 +413,7 @@ void ast_assign(ast_node_t *node){
 
 //funkce pro volani funkci
 //TODO: NEDOKONCENE, potreba poresit logiku volani funkci
+//predelat na switch case? 
 void ast_call(ast_node_t *node){
 
     if (strcmp(node->data.func.name, "print") == 0){
