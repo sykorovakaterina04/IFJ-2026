@@ -141,14 +141,14 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
         if(param_types){
 
             new_node->data.param_types = malloc(param_count * sizeof(data_type_t));
-            
+
             if(new_node->data.param_types == NULL){
                 fprintf(stderr, "%s", "chyba pri alokaci parametru");
                 exit(99);
             }
-        
+
             memcpy(new_node->data.param_types, param_types, param_count * sizeof(data_type_t));
-        
+
         }
 
         return(new_node);
@@ -165,23 +165,21 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
 
     node->height = symtable_max(symtable_getheight(node->left), symtable_getheight(node->right)) + 1;
 
-    int balance = symtable_getbalance(node);
-
-    if (balance > 1){
-        if(strcmp(key, node->left->key) < 0){
+    if (symtable_getbalance(node) > 1){
+        if(symtable_getbalance(node->left) >= 0){
             return symtable_rrotate(node);
         }
-        if(strcmp(key, node->left->key) > 0){
+        if(symtable_getbalance(node->left) < 0){
             node->left = symtable_lrotate(node->left);
             return symtable_rrotate(node);
         }  
     }
 
-    if (balance < -1){
-        if(strcmp(key, node->right->key) > 0){
+    if (symtable_getbalance(node) < -1){
+        if(symtable_getbalance(node->right) <= 0){
             return symtable_lrotate(node);
         }
-        if(strcmp(key, node->right->key) < 0){
+        if(symtable_getbalance(node) > 0){
             node->right = symtable_rrotate(node->right);
             return symtable_lrotate(node);
         }  
