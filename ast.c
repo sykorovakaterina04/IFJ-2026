@@ -173,10 +173,11 @@ ast_node_t *ast_create_literal_unit(int line){
     return literal_unit;
 }
 
-ast_node_t *ast_create_return(ast_node_t *var, int line){
+ast_node_t *ast_create_return(ast_node_t *var, ast_node_t *func_def, int line){
     ast_node_t *ast_return = ast_create_node(AST_RETURN);
 
     ast_return->data.node_return.var = var;
+    ast_return->data.node_return.func_def = func_def;
     ast_return->line = line;
 
     return ast_return;
