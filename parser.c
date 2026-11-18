@@ -1046,13 +1046,10 @@ static int parse_return(tree_t *global_symtable, tree_t *local_symtable, data_ty
         if(func_return_type != TYPE_UNIT){
             return 6;
         }
+
         *out_node = ast_create_return(NULL, current_func, line);
         return (*out_node == NULL) ? 99 : 0;
     }   
-
-    if(func_return_type == TYPE_UNIT){
-        return 6;
-    }
 
     data_type_t expr_type;
     ast_node_t *epxr = NULL;
@@ -1261,24 +1258,28 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack, ast_no
 
 
 if (current_token.type == TOKEN_EOL) {
+    func ->return_type = return_type;
+    current_func = func;
         // viceradkova funkce
-        if (!explicit_type) {
-            return_type = TYPE_UNIT;
-            if (fn != NULL) {
-                fn->data_type = TYPE_UNIT;
-            }
-        }
-        func->return_type = return_type;
-        current_func = func;
+    res = parse_block(global_symtable, local_symtable, indent_stack, return_type, &func->data.func.body);
+    current_func = NULL;
+    if (res != 0) {
+        symtable_destroy_tree(local_symtable);
+        ast_destroy_node(func);
+        return res;
+    }
+    } 
+    if (!explicit_type) {
 
-        res = parse_block(global_symtable, local_symtable, indent_stack, return_type, &func->data.func.body);
-        current_func = NULL;
-        if (res != 0) {
-            symtable_destroy_tree(local_symtable);
-            ast_destroy_node(func);
-            return res;
+        //DODELAT ZATIM JE UNIT MA SE TO ODVODIT Z POSLEDNIHO
+        return_type = TYPE_UNIT;
+        if (fn != NULL) {
+            fn->data_type = TYPE_UNIT;
         }
-    } else if (current_token.type == TOKEN_EOF) {
+    }
+    
+    
+    if (current_token.type == TOKEN_EOF) {
         symtable_destroy_tree(local_symtable);
         ast_destroy_node(func);
         return 2;
@@ -1309,7 +1310,7 @@ if (current_token.type == TOKEN_EOL) {
         }
 
         if (explicit_type) {
-            if (!is_type_compatible(body_type, return_type)) {
+            if (return_type != TYPE_UNIT && !is_type_compatible(body_type, return_type)) {
                 ast_destroy_node(expr);
                 symtable_destroy_tree(local_symtable);
                 ast_destroy_node(func);
@@ -1471,12 +1472,7 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack, ast_node_t
             ast_destroy_node(func);
             return 2;
         }
-        if (!is_type_compatible(body_type, TYPE_UNIT)) {
-            ast_destroy_node(expr);
-            symtable_destroy_tree(local_symtable);
-            ast_destroy_node(func);
-            return 6;
-        }
+        
 
         func->data.func.body = ast_create_block(local_symtable, expr);
         if (func->data.func.body == NULL) {
