@@ -540,6 +540,7 @@ void ast_block(ast_node_t *node){
 
     //kontrola prazdneho uzlu
     if(node->data.block.first_line == NULL){
+        printf("PUSHS string@()\n");
         return;
     }
     //kontrola zda se nachazime v tele funkce
@@ -562,7 +563,7 @@ void ast_block(ast_node_t *node){
 
         if(is_last){
             if(curr_func->return_type == TYPE_UNIT){
-                if(is_expr && curr->return_type != TYPE_UNIT){
+                if(is_expr){
                     printf("POPS GF@$tmp1\n");
                 }
             printf("PUSHS string@()\n");
@@ -573,7 +574,7 @@ void ast_block(ast_node_t *node){
             }
             
         } else {
-            if (is_expr && curr->return_type != TYPE_UNIT) {
+            if (is_expr) {
                 printf("POPS GF@$tmp1\n");
         }
 
@@ -623,6 +624,7 @@ void ast_func_def(ast_node_t *node){
     }
 
     //pomocna promenna pro uchovani parametru funkce
+    if (args_cnt > 0){
     ast_node_t *params[args_cnt];
     int idx = 0;
     for(ast_node_t *arg = node->data.func.args; arg != NULL; arg = arg->next){
@@ -635,7 +637,7 @@ void ast_func_def(ast_node_t *node){
             printf("DEFVAR LF@%s\n", params[i]->data.variable.name);
             printf("POPS LF@%s\n", params[i]->data.variable.name);
     }
-
+    }
     //projdi zbytek funkce a hned vypis lokalni promenne 
     definuj_defvar(node->data.func.body);
 
