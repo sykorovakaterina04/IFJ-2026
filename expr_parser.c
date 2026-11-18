@@ -14,7 +14,7 @@ enum {
     P_LP,       // (
     P_RP,       // )
     P_ID,       // operand (i)
-    P_END,      // $
+    P_END,      // DNO
     P_TERM_COUNT,
     SYM_E = P_TERM_COUNT,   // neterminal E
     SYM_HANDLE              // zarazka <
