@@ -503,6 +503,33 @@ void ast_while(ast_node_t *node){
 
 }
 
+
+void ast_block(ast_node_t *node){
+
+    if(node->data.block.first_line == NULL){
+        return;
+    }
+    ast_node_t *curr = node->data.block.first_line; //promenna pro zkraceni zapisu
+
+    while(curr != NULL){
+
+        zpracuj_uzel(curr);
+
+        if(curr->type == AST_VAR ||
+            curr->type == AST_LITERAL ||
+            curr->type == AST_CALL||
+            curr->type == AST_BINOP){
+                if(curr->return_type != TYPE_UNIT){
+                    printf("POPS GF@$tmp1\n"); //zahozeni vysledku
+                }
+            }
+    curr = curr->next; //posun cyklu
+    }
+
+
+}
+
+
 /*
 
 
@@ -514,17 +541,6 @@ void ast_return(ast_node_t *node){
 
 
 }
-
-
-void ast_block(ast_node_t *node){
-
-    if(node->data.block.first_line == NULL){
-        return;
-    }
-
-
-}
-
 
 */
 
@@ -555,11 +571,11 @@ void zpracuj_uzel(ast_node_t *node){
             case AST_WHILE:
                     ast_while(node);
                 break;
+            case AST_BLOCK:
+                    ast_block(node);
+                break;
             case AST_FUNC_DEF:
                 //WIP3
-                break;
-            case AST_BLOCK:
-                //TODO
                 break;
             case AST_RETURN:
                 //TODO
