@@ -28,9 +28,9 @@ typedef struct ast_node ast_node_t;
 
 struct ast_node{
     ast_type_t type; // typ uzlu
-    data_type_t return_type; //jaky typ manode vracet
+    data_type_t return_type; //jaky typ ma node vracet
 
-    ast_node_t *next; //dalsi radek v blocku / dalsi argument
+    ast_node_t *next; //dalsi radek v blocku / dalsi argument / dalsi funkce
     
     int line; // cislo radku, na kterem se operace nachazi
 
