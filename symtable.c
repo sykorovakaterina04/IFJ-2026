@@ -3,7 +3,6 @@
 tree_t *symtable_init(tree_t *parent){
     tree_t * tree = calloc(1, sizeof(tree_t));
     if(tree == NULL){
-        fprintf(stderr, "%s", "chyba pri alokaci stromu");
         exit(99);
     }
     tree->parent = parent;
@@ -22,26 +21,21 @@ static int symtable_max(int a, int b){
 tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
 
     if(tree == NULL){
-        fprintf(stderr, "%s", "predany strom byl nulovy");
         return NULL;
     }
 
     if(key == NULL ){
-        fprintf(stderr, "%s", "prednay klic je nulovy");
         return NULL;
     }
 
     tnode_t *tmp = tree->root;
 
     while(tmp != NULL){
-        int cmp = strcmp(key, tmp->key);
-        if(cmp < 0){
+        if(strcmp(key, tmp->key) < 0){
             tmp = tmp->left;
-        }
-        if(cmp > 0){
+        } else if(strcmp(key, tmp->key) > 0){
             tmp = tmp->right;
-        }
-        if (cmp == 0){
+        } else if (strcmp(key, tmp->key) == 0){
             return &(tmp->data);
         }
     }
@@ -51,12 +45,10 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
 tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
     if(tree == NULL ){
-        fprintf(stderr, "%s", "predany strom byl nulovy");
         return NULL;
     }
 
     if(key == NULL ){
-        fprintf(stderr, "%s", "prednay klic je nulovy");
         return NULL;
     }
 
@@ -65,7 +57,7 @@ tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
     while(tree){
 
-        data = symtable_lookup_local(tree->parent, key);
+        data = symtable_lookup_local(tree, key);
         tree = tree->parent;
         
 
@@ -113,13 +105,11 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
     if(node == NULL){
         tnode_t *new_node = calloc(1, sizeof(tnode_t));
         if ((new_node == NULL)){
-            fprintf(stderr, "%s", "chyba pri alokaci noveho elementu");
             exit(99);
         }
         
         new_node->key = malloc(strlen(key) + 1);
         if(new_node->key == NULL){
-            fprintf(stderr, "%s", "chyba pri alokaci noveho elementu");
             exit(99);
         }
         strcpy(new_node->key, key);
@@ -197,7 +187,6 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
 int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data_type, int line){
 
     if (tree == NULL || key == NULL){
-        fprintf(stderr, "%s", "spatne zadane paramery");
         return 1;
     }
 
@@ -214,7 +203,6 @@ int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t
 int symtable_insert_func(tree_t *tree, const char *key, data_type_t data_type, int line, int param_count, data_type_t *param_types){
 
     if (tree == NULL || key == NULL){
-        fprintf(stderr, "%s", "spatne zadane paramery");
         return 1;
     }
 
