@@ -712,7 +712,7 @@ void generuj_kod(ast_tree_t *tree){
     printf("DEFVAR GF@$tmp4\n");
     printf("DEFVAR GF@$tmp5\n");
     
-    printf("CALL main\n");
+    printf("CALL %s\n", main_func_name);
 
     printf("EXIT int@0\n");
 
