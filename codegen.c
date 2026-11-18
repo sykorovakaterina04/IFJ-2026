@@ -23,14 +23,14 @@ void print_literal(ast_node_t *node){
                     } else if (node->data.literal.string_val[i] == 35){
                         printf("\\035");
                     } else if ((unsigned char)node->data.literal.string_val[i] < 32){
-                        printf("\\%03d",node->data.literal.string_val[i]); //pokud je hodnota znaku <= 32, kod vypise ciselnou hodnotu ve formatu \0xx
+                        printf("\\%03d",(unsigned char)node->data.literal.string_val[i]); //pokud je hodnota znaku <= 32, kod vypise ciselnou hodnotu ve formatu \0xx
                     } else {
                         printf("%c",node->data.literal.string_val[i]);
                     }
                 }
             break;
         case TYPE_UNIT:
-                printf("string@()\n");
+                printf("string@()");
             break;
         default:
             break; 
@@ -55,6 +55,30 @@ void print_var(ast_node_t *node){
         default:
             break;
         }
+
+}
+
+void definuj_defvar(ast_node_t *node){
+
+    if(node == NULL){
+        return;
+    }
+
+
+    if(node->type == AST_VAR_DEF){
+        printf("DEFVAR ");
+        print_var(node);
+        printf("\n");
+    } else if(node->type == AST_BLOCK){
+        for(ast_node_t *line = node->data.block.first_line; line != NULL; line = line->next){
+            definuj_defvar(line);
+        }
+    } else if (node->type == AST_IF) {
+        definuj_defvar(node->data.condicionals.body);
+        definuj_defvar(node->data.condicionals.else_body);
+    } else if (node->type == AST_WHILE) {
+        definuj_defvar(node->data.condicionals.body);
+    }
 
 }
 
@@ -314,9 +338,9 @@ void ast_literal(ast_node_t *node){
 //funkce pro generovani definice promenne
 void ast_var_def(ast_node_t *node){
 
-    printf("DEFVAR ");
-    print_var(node);
-    printf("\n");
+    //samotna funkce nesmi nic tisknout
+    //DEFVAR ted tiskne pouze ast_func_def pomoci funkce definuj_defvar
+    //zamezi se tim nasobnemu tisknuti definice promennych
 
 }
 
@@ -339,7 +363,7 @@ void ast_var(ast_node_t *node){
 //TODO potreba poresit pripady kdy potreba poresit konverze mezi datovymi typy
 void ast_binop(ast_node_t *node){
 
-    projdi_strom(node->data.binop.left);
+    zpracuj_uzel(node->data.binop.left);
     //pokud argument neni var ani literal je stale potreba overit jestli jsou typy shodne
     if((node->data.binop.left->return_type == TYPE_INT) && (node->data.binop.right->return_type == TYPE_DOUBLE)){
         //pojistka proti double konverzi
@@ -347,7 +371,7 @@ void ast_binop(ast_node_t *node){
             printf("INT2FLOATS\n");
         }
     }
-    projdi_strom(node->data.binop.right);
+    zpracuj_uzel(node->data.binop.right);
      if((node->data.binop.left->return_type == TYPE_DOUBLE) && (node->data.binop.right->return_type == TYPE_INT)){
         if((node->data.binop.right->type != AST_LITERAL) && (node->data.binop.right->type != AST_VAR)){
             printf("INT2FLOATS\n");
@@ -410,7 +434,7 @@ void ast_binop(ast_node_t *node){
 //funkce pro pridani hodnoty do promenne
 void ast_assign(ast_node_t *node){
 
-    projdi_strom(node->data.assign.source); //vyhodnoceni zdroje, ktery muze byt typu AST_LITRAL, AST_VAR nebo AST_BINOP
+    zpracuj_uzel(node->data.assign.source); //vyhodnoceni zdroje, ktery muze byt typu AST_LITRAL, AST_VAR nebo AST_BINOP
     printf("POPS "); //Predani z vrcholu zasobniku
     print_var(node->data.assign.dest);
     printf("\n");
@@ -443,6 +467,7 @@ void ast_call(ast_node_t *node){
             case_subStr(node);
     }else {
         projdi_strom(node->data.func.args);
+
         printf("CALL ");
         printf("%s", node->data.func.name);
         printf("\n");
@@ -460,26 +485,26 @@ void ast_if(ast_node_t *node){
         return;
     } else if (node->data.condicionals.else_body == NULL){
 
-        projdi_strom(node->data.condicionals.cond);
+        zpracuj_uzel(node->data.condicionals.cond);
 
         printf("PUSHS bool@false\n");
         printf("JUMPIFEQS $if_end_%d\n", id);
 
-        projdi_strom(node->data.condicionals.body);
+        zpracuj_uzel(node->data.condicionals.body);
 
         printf("LABEL $if_end_%d\n", id);
     } else {
 
-        projdi_strom(node->data.condicionals.cond);
+        zpracuj_uzel(node->data.condicionals.cond);
 
         printf("PUSHS bool@false\n");
         printf("JUMPIFEQS $else_body_%d\n", id);
 
-        projdi_strom(node->data.condicionals.body);
+        zpracuj_uzel(node->data.condicionals.body);
         printf("JUMP $if_end_%d\n", id);
 
         printf("LABEL $else_body_%d\n", id);
-        projdi_strom(node->data.condicionals.else_body);
+        zpracuj_uzel(node->data.condicionals.else_body);
 
         printf("LABEL $if_end_%d\n", id);
 
@@ -497,12 +522,12 @@ void ast_while(ast_node_t *node){
     } else {
 
         printf("LABEL $while_top_%d\n",id);
-        projdi_strom(node->data.condicionals.cond);
+        zpracuj_uzel(node->data.condicionals.cond);
 
         printf("PUSHS bool@false\n");
         printf("JUMPIFEQS $while_end_%d\n",id);
 
-        projdi_strom(node->data.condicionals.body);
+        zpracuj_uzel(node->data.condicionals.body);
         printf("JUMP $while_top_%d\n", id);
 
         printf("LABEL $while_end_%d\n", id);
@@ -563,18 +588,18 @@ void ast_block(ast_node_t *node){
 void ast_return(ast_node_t *node){
 
     if(node->data.node_return.var != NULL){
-        projdi_strom(node->data.node_return.var);
+        zpracuj_uzel(node->data.node_return.var);
     }
 
-    if(node->data.node_return.func_def == TYPE_UNIT){
+    if(node->data.node_return.func_def->return_type == TYPE_UNIT){
         if(node->data.node_return.var != NULL && node->data.node_return.var->return_type != TYPE_UNIT){
             printf("POPS GF@$tmp1\n");
         }
-        printf("PUSHS string@()");
+        printf("PUSHS string@()\n");
     } else {
         if(node->data.node_return.var != NULL &&
             node->data.node_return.var->return_type == TYPE_INT &&
-            node->data.node_return.func_def == TYPE_DOUBLE
+            node->data.node_return.func_def->return_type == TYPE_DOUBLE
             ){
                 printf("INT2FLOATS\n");
             }
@@ -582,7 +607,7 @@ void ast_return(ast_node_t *node){
     printf("JUMP $end_func_%s\n", node->data.node_return.func_def->data.func.name);
 }
 
-//TODO: nedokoncene potreba opravit generovani defvar
+
 void ast_func_def(ast_node_t *node){
 
     curr_func = node;
@@ -597,14 +622,24 @@ void ast_func_def(ast_node_t *node){
         args_cnt++;
     }
 
-    for(int defvar_cnt = 1; defvar_cnt <= args_cnt; defvar_cnt++){
-        printf("DEFVAR LF@param%d\n", defvar_cnt);
-    }
-    for(int pops_cnt = args_cnt; pops_cnt > 0; pops_cnt--){
-        printf("POPS LF@param%d\n", pops_cnt);
+    //pomocna promenna pro uchovani parametru funkce
+    ast_node_t *params[args_cnt];
+    int idx = 0;
+    for(ast_node_t *arg = node->data.func.args; arg != NULL; arg = arg->next){
+        params[idx] = arg;
+        idx++;
     }
 
-    projdi_strom(node->data.func.body);
+    //definice promennych a vytahnuti parametru ze zasobniku
+    for (int i = args_cnt - 1; i >= 0; i--) {
+            printf("DEFVAR LF@%s\n", params[i]->data.variable.name);
+            printf("POPS LF@%s\n", params[i]->data.variable.name);
+    }
+
+    //projdi zbytek funkce a hned vypis lokalni promenne 
+    definuj_defvar(node->data.func.body);
+
+    zpracuj_uzel(node->data.func.body);
 
     printf("LABEL $end_func_%s\n", node->data.func.name);
 
@@ -658,14 +693,10 @@ void zpracuj_uzel(ast_node_t *node){
 
 void projdi_strom(ast_node_t *node){
 
-    if(node == NULL){
-        return;
-    }
-    while(node != NULL){
+   while (node != NULL) {
         zpracuj_uzel(node);
-    node = node->next;
+        node = node->next;
     }
-
 }
 
 void generuj_kod(ast_tree_t *tree){
@@ -678,9 +709,6 @@ void generuj_kod(ast_tree_t *tree){
     printf("DEFVAR GF@$tmp3\n");
     printf("DEFVAR GF@$tmp4\n");
     printf("DEFVAR GF@$tmp5\n");
-
-    printf("CREATEFRAME\n");
-    printf("PUSHFRAME\n");
     
     printf("CALL main\n");
 
