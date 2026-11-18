@@ -1,9 +1,12 @@
 #include "codegen.h"
 
+//staticka promenna pro funkci ast_block, aby slo rozeznat zda se nachazi v tele funkce
+static ast_node_t *curr_func = NULL;
+
 //funkce pro tisknuti literalu
 //vyuzivaji funkce ast_literal(), case_print()
 void print_literal(ast_node_t *node){
-    switch (node->return_type){
+    switch (node->data.literal.type){
         case TYPE_INT: //datovy typ literalu je int
             printf("int@%d", node->data.literal.i_val);
             break;
@@ -19,12 +22,15 @@ void print_literal(ast_node_t *node){
                         printf("\\092");
                     } else if (node->data.literal.string_val[i] == 35){
                         printf("\\035");
-                    } else if (node->data.literal.string_val[i] < 32){
+                    } else if ((unsigned char)node->data.literal.string_val[i] < 32){
                         printf("\\%03d",node->data.literal.string_val[i]); //pokud je hodnota znaku <= 32, kod vypise ciselnou hodnotu ve formatu \0xx
                     } else {
                         printf("%c",node->data.literal.string_val[i]);
                     }
                 }
+            break;
+        case TYPE_UNIT:
+                printf("string@()\n");
             break;
         default:
             break; 
@@ -69,8 +75,8 @@ void case_print(ast_node_t *node){
         projdi_strom(node->data.func.args);
         printf("POPS GF@$tmp1\n");
         printf("WRITE GF@$tmp1\n");
-
     }
+    printf("PUSHS string@()\n");
 }
 
 void case_toStr(ast_node_t *node){
@@ -299,7 +305,7 @@ void ast_literal(ast_node_t *node){
 
      //pripad kdy conversion_type neni shodny s type
       if(node->data.literal.conversion_type != node->data.literal.type){
-        if((node->return_type == TYPE_INT) && (node->data.literal.conversion_type == TYPE_DOUBLE)){
+        if((node->data.literal.type == TYPE_INT) && (node->data.literal.conversion_type == TYPE_DOUBLE)){
             printf("INT2FLOATS\n");
         }
       }
@@ -504,70 +510,99 @@ void ast_while(ast_node_t *node){
 
 }
 
-//TODO: poresit podminku pro moment kdy se ast block nachazi ve funkci a nesmi zahodi vysledek
+
 void ast_block(ast_node_t *node){
 
+    //kontrola prazdneho uzlu
     if(node->data.block.first_line == NULL){
         return;
     }
+    //kontrola zda se nachazime v tele funkce
+    bool is_afunc_body = (curr_func != NULL && curr_func->data.func.body == node);
+
     ast_node_t *curr = node->data.block.first_line; //promenna pro zkraceni zapisu
 
+    //prochazime po krocich kvuli cisteni zasobniku
     while(curr != NULL){
+
+        //kontrola zda se nenachazime na konci funkce 
+        bool is_last = (is_afunc_body && curr->next == NULL);
 
         zpracuj_uzel(curr);
 
-        if(curr->type == AST_VAR ||
+        bool is_expr = (curr->type == AST_VAR ||
             curr->type == AST_LITERAL ||
             curr->type == AST_CALL||
-            curr->type == AST_BINOP){
-                if(curr->return_type != TYPE_UNIT){
-                    printf("POPS GF@$tmp1\n"); //zahozeni vysledku
+            curr->type == AST_BINOP);
+
+        if(is_last){
+            if(curr_func->return_type == TYPE_UNIT){
+                if(is_expr && curr->return_type != TYPE_UNIT){
+                    printf("POPS GF@$tmp1\n");
+                }
+            printf("PUSHS string@()\n");
+            } else {
+                if (is_expr && curr->return_type == TYPE_INT && curr_func->return_type == TYPE_DOUBLE) {
+                    printf("INT2FLOATS\n");
                 }
             }
+            
+        } else {
+            if (is_expr && curr->return_type != TYPE_UNIT) {
+                printf("POPS GF@$tmp1\n");
+        }
+
+
     curr = curr->next; //posun cyklu
     }
-
+    }
 
 }
 
 //TODO: potreba zkontrolovat
 void ast_return(ast_node_t *node){
 
-    if(node->data.node_return.var == NULL && node->data.node_return.func_def->return_type == TYPE_UNIT){
-        printf("PUSHS string@()\n");
-    }
-
-    if(node->data.node_return.func_def->return_type == TYPE_UNIT){
-        if(node->data.node_return.var != NULL && node->data.node_return.var->return_type != TYPE_UNIT){
-            printf("POPS GF@$tmp1\n");
-        }
-    }
-
     if(node->data.node_return.var != NULL){
         projdi_strom(node->data.node_return.var);
     }
 
-    if(node->data.node_return.var->return_type == TYPE_INT && node->data.node_return.func_def->return_type == TYPE_DOUBLE){
-        if (node->data.node_return.var->type != AST_LITERAL && node->data.node_return.var->type != AST_VAR){
-            printf("INT2FLOATS\n");
+    if(node->data.node_return.func_def == TYPE_UNIT){
+        if(node->data.node_return.var != NULL && node->data.node_return.var->return_type != TYPE_UNIT){
+            printf("POPS GF@$tmp1\n");
         }
+        printf("PUSHS string@()");
+    } else {
+        if(node->data.node_return.var != NULL &&
+            node->data.node_return.var->return_type == TYPE_INT &&
+            node->data.node_return.func_def == TYPE_DOUBLE
+            ){
+                printf("INT2FLOATS\n");
+            }
     }
-
-    printf("JUMP $func_end_%s\n", node->data.node_return.func_def->data.func.name);
+    printf("JUMP $end_func_%s\n", node->data.node_return.func_def->data.func.name);
 }
 
-
-
-
-//TODO: nedokoncene
+//TODO: nedokoncene potreba opravit generovani defvar
 void ast_func_def(ast_node_t *node){
+
+    curr_func = node;
 
     printf("LABEL %s\n", node->data.func.name);
 
     printf("CREATEFRAME\n");
     printf("PUSHFRAME\n");
 
-    //dopnit cyklus pro pocet argumentu ktery nejdrive provede DEFVAR a pak POPS
+    int args_cnt = 0;
+    for(ast_node_t *args = node->data.func.args; args != NULL; args = args->next){
+        args_cnt++;
+    }
+
+    for(int defvar_cnt = 1; defvar_cnt <= args_cnt; defvar_cnt++){
+        printf("DEFVAR LF@param%d\n", defvar_cnt);
+    }
+    for(int pops_cnt = args_cnt; pops_cnt > 0; pops_cnt--){
+        printf("POPS LF@param%d\n", pops_cnt);
+    }
 
     projdi_strom(node->data.func.body);
 
@@ -575,9 +610,9 @@ void ast_func_def(ast_node_t *node){
 
     printf("POPFRAME\n");
     printf("RETURN\n");
+
+    curr_func = NULL;
 }
-
-
 
 void zpracuj_uzel(ast_node_t *node){
 
