@@ -6,9 +6,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-///temp
-
-static void ast_destroy_node(ast_node_t *node);
 
 //pomocne struktry, funkce
 typedef struct {
