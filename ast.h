@@ -87,6 +87,7 @@ struct ast_node{
 
 typedef struct ast_tree{
     ast_node_t *root;
+    tree_t *global_symtable;
 }ast_tree_t;
 
 ast_tree_t *ast_init();
