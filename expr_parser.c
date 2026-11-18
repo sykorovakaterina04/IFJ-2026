@@ -6,9 +6,9 @@
 //symboly precedenci synt analyzy
 
 enum {
-    P_UN = 0,   // unarni + -
+    P_UN = 0,   // unarni + -  //-a 
     P_MUL,      // * /
-    P_ADD,      // binarni + -
+    P_ADD,      // binarni + - // a - b
     P_REL,      // < <= > >=
     P_EQ,       // == !=
     P_LP,       // (
@@ -21,9 +21,19 @@ enum {
 };
 
 //precednci tabulka
-
+//F konec, < odlozit , > redukovat, = uzavirka, ' 'chyba
+//radek nejvyssi terminal, sloupec co dojde
 static const char PSA_TABLE[P_TERM_COUNT][P_TERM_COUNT]= {
-
+    //      UN  MUL  ADD  REL  EQ    (    )    I    DNO 
+           {'<','>', '>', '>', '>', '<', '>', '<',  '>' },//UN
+           {'<','>', '>', '>', '>', '<', '>', '<',  '>' },//MUL
+           {'<','<', '>', '>', '>', '<', '>', '<',  '>' },//ADD
+           {'<','<', '<', ' ', '>', '<', '>', '<',  '>' },// REL 
+           {'<','<', '<', '<', ' ', '<', '>', '<',  '>' },// EQ 
+           {'<','<', '<', '<', '<', '<', '=', '<',  ' ' },// (                                             
+           {' ','>', '>', '>', '>', ' ', '>', ' ',  '>' },// )                                           
+           {' ','>', '>', '>', '>', ' ', '>', ' ',  '>' },// I                                             
+           {'<','<', '<', '<', '<', '<', ' ', '<',  'F' },//DNO                                            
 };
 
 
