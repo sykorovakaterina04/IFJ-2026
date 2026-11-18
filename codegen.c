@@ -436,7 +436,8 @@ void ast_call(ast_node_t *node){
     }else if(strcmp(node->data.func.name, "subStr") == 0){
             case_subStr(node);
     }else {
-        printf("CALL ");//dokoncit, velmi nedokoncene!!! 
+        projdi_strom(node->data.func.args);
+        printf("CALL ");
         printf("%s", node->data.func.name);
         printf("\n");
     }
@@ -529,6 +530,7 @@ void ast_block(ast_node_t *node){
 
 }
 
+//TODO: potreba zkontrolovat
 void ast_return(ast_node_t *node){
 
     if(node->data.node_return.var == NULL && node->data.node_return.func_def->return_type == TYPE_UNIT){
@@ -555,14 +557,27 @@ void ast_return(ast_node_t *node){
 }
 
 
-/*
 
 
+//TODO: nedokoncene
 void ast_func_def(ast_node_t *node){
 
+    printf("LABEL %s\n", node->data.func.name);
+
+    printf("CREATEFRAME\n");
+    printf("PUSHFRAME\n");
+
+    //dopnit cyklus pro pocet argumentu ktery nejdrive provede DEFVAR a pak POPS
+
+    projdi_strom(node->data.func.body);
+
+    printf("LABEL $end_func_%s\n", node->data.func.name);
+
+    printf("POPFRAME\n");
+    printf("RETURN\n");
 }
 
-*/
+
 
 void zpracuj_uzel(ast_node_t *node){
 
@@ -598,7 +613,7 @@ void zpracuj_uzel(ast_node_t *node){
                     ast_return(node);
                 break;
             case AST_FUNC_DEF:
-                //WIP3
+                    ast_func_def(node);
                 break;
             default:
                 break;
@@ -632,7 +647,9 @@ void generuj_kod(ast_tree_t *tree){
     printf("CREATEFRAME\n");
     printf("PUSHFRAME\n");
     
-    //CALL main?
+    printf("CALL main\n");
+
+    printf("EXIT int@0\n");
 
     //pruchod stromem
     if(tree != NULL){
