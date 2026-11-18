@@ -2,62 +2,72 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error){
-	if(node == NULL || *error != 0){
-        return;
-    }
+void check_var(ast_node_t *node, tree_t *local_symtable, int *error) {
+	char *var_name = node->data.variable.name;
+	tdata_t *data = symtable_lookup(local_symtable, var_name);
+	if (data == NULL) {
+		*error = 3;
+	} else {
+		node->data.variable.type = data->data_type;
+	}
+}
 
-    switch(node->type){
-        case AST_ASSIGN:
-            sem_check_node(node->data.assign.dest, local_symtable, error);
-            sem_check_node(node->data.assign.source, local_symtable, error);
-            break;
-        
-        case AST_BINOP:
-            sem_check_node(node->data.binop.left, local_symtable, error);
-            sem_check_node(node->data.binop.right, local_symtable, error);
-            break;
+void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || *error != 0) {
+		return;
+	}
 
-        case AST_BLOCK:
-            sem_check_node(node->data.block.first_line, local_symtable, error);
-            break;
+	switch (node->type) {
+	case AST_ASSIGN:
+		sem_check_node(node->data.assign.dest, local_symtable, error);
+		sem_check_node(node->data.assign.source, local_symtable, error);
+		break;
 
-        case AST_IF:
-            sem_check_node(node->data.condicionals.cond, local_symtable, error);
-            sem_check_node(node->data.condicionals.body, local_symtable, error);
-            sem_check_node(node->data.condicionals.else_body, local_symtable, error);
-            break;
+	case AST_BINOP:
+		sem_check_node(node->data.binop.left, local_symtable, error);
+		sem_check_node(node->data.binop.right, local_symtable, error);
+		break;
 
-        case AST_WHILE:
-            sem_check_node(node->data.condicionals.cond, local_symtable, error);
-            sem_check_node(node->data.condicionals.body, local_symtable, error);
-            break;
+	case AST_BLOCK:
+		sem_check_node(node->data.block.first_line, local_symtable, error);
+		break;
 
-        case AST_FUNC_DEF:
-            sem_check_node(node->data.func.args, local_symtable, error);
-            sem_check_node(node->data.func.body, local_symtable, error);
-            break;
+	case AST_IF:
+		sem_check_node(node->data.condicionals.cond, local_symtable, error);
+		sem_check_node(node->data.condicionals.body, local_symtable, error);
+		sem_check_node(node->data.condicionals.else_body, local_symtable,
+					   error);
+		break;
 
-        case AST_CALL:
-            sem_check_node(node->data.func.args, local_symtable, error);
-            break;
+	case AST_WHILE:
+		sem_check_node(node->data.condicionals.cond, local_symtable, error);
+		sem_check_node(node->data.condicionals.body, local_symtable, error);
+		break;
 
-        case AST_VAR_DEF:
-            break;
+	case AST_FUNC_DEF:
+		sem_check_node(node->data.func.args, local_symtable, error);
+		sem_check_node(node->data.func.body, local_symtable, error);
+		break;
 
-        case AST_VAR:
-            break;
+	case AST_CALL:
+		sem_check_node(node->data.func.args, local_symtable, error);
+		break;
 
-        case AST_LITERAL:
+	case AST_VAR_DEF:
+		break;
 
-            break;
+	case AST_VAR:
+		break;
 
-        case AST_RETURN:
-            sem_check_node(node->data.node_return.var, local_symtable, error);
-            break;
-    }
-    sem_check_node(node->next, local_symtable, error);
+	case AST_LITERAL:
 
+		break;
+
+	case AST_RETURN:
+		sem_check_node(node->data.node_return.var, local_symtable, error);
+		break;
+	}
+	sem_check_node(node->next, local_symtable, error);
 }
 
 int sem_check(ast_tree_t *tree, tree_t *global_symtable) {
@@ -67,4 +77,3 @@ int sem_check(ast_tree_t *tree, tree_t *global_symtable) {
 
 	return error;
 }
-
