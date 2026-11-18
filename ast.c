@@ -9,7 +9,7 @@ ast_tree_t *ast_init(){
     return ast;
 }
 
-ast_node_t *ast_create_node(ast_type_t type){
+static ast_node_t *ast_create_node(ast_type_t type){
     ast_node_t *new_node = calloc(1, sizeof(ast_node_t));
     if(new_node == NULL){
         fprintf(stderr, "%s", "chyba pri alokaci stromu");

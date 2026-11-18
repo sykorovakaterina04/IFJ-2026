@@ -91,8 +91,6 @@ typedef struct ast_tree{
 
 ast_tree_t *ast_init();
 
-ast_node_t *ast_create_node(ast_type_t type);
-
 ast_node_t *ast_create_binop(binop_type_t type, ast_node_t *left, ast_node_t *right, int line);
 
 ast_node_t *ast_create_assign(ast_node_t *source, ast_node_t *dest, int line);
