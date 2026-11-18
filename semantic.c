@@ -11,7 +11,7 @@ int sem_check(ast_tree_t *tree) {
 }
 
 void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error){
-	if(node == NULL){
+	if(node == NULL || *error != 0){
         return;
     }
 
