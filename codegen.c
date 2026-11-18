@@ -157,7 +157,15 @@ void case_strLength(ast_node_t *node){
 
 void case_readLine(void){
 
+    static int cnt = 0;
+    int id = cnt++;
+
     printf("READ GF@$tmp1 string\n");
+
+    printf("JUMPIFNEQ $skip_line_%d GF@$tmp1 nil@nil\n", id);
+    printf("MOVE GF@$tmp1 int@0\n");
+    printf("LABEL $skip_line_%d\n", id);
+
     printf("PUSHS GF@$tmp1\n");
 }
 
@@ -172,7 +180,7 @@ void case_readInt(void){
     //pri EOF nebo chybnem vstupu READ vrati nil@nil, ale my potrebujeme aby vratil 0
     //pomuzeme si prikazem JUMPIFNEQ
     printf("JUMPIFNEQ $skip_int_%d GF@$tmp1 nil@nil\n", id);
-    printf("MOVE GF@$tmp1 int@0\n");
+    printf("MOVE GF@$tmp1 string@\n");
     printf("LABEL $skip_int_%d\n", id);
     printf("PUSHS GF@$tmp1\n");
 }
@@ -360,7 +368,6 @@ void ast_var(ast_node_t *node){
 }
 
 //funkce pro genrovani binarnich operaci
-//TODO potreba poresit pripady kdy potreba poresit konverze mezi datovymi typy
 void ast_binop(ast_node_t *node){
 
     zpracuj_uzel(node->data.binop.left);
@@ -442,7 +449,6 @@ void ast_assign(ast_node_t *node){
 }
 
 //funkce pro volani funkci
-//TODO: NEDOKONCENE, potreba poresit logiku volani funkci
 void ast_call(ast_node_t *node){
 
     if (strcmp(node->data.func.name, "print") == 0){
@@ -474,7 +480,6 @@ void ast_call(ast_node_t *node){
     }
     
 }
-
 
 void ast_if(ast_node_t *node){
 
@@ -535,7 +540,6 @@ void ast_while(ast_node_t *node){
 
 }
 
-
 void ast_block(ast_node_t *node){
 
     //kontrola prazdneho uzlu
@@ -551,41 +555,41 @@ void ast_block(ast_node_t *node){
     //prochazime po krocich kvuli cisteni zasobniku
     while(curr != NULL){
 
-        //kontrola zda se nenachazime na konci funkce 
-        bool is_last = (is_afunc_body && curr->next == NULL);
+            //kontrola zda se nenachazime na konci funkce 
+            bool is_last = (is_afunc_body && curr->next == NULL);
 
-        zpracuj_uzel(curr);
+            zpracuj_uzel(curr);
 
-        bool is_expr = (curr->type == AST_VAR ||
-            curr->type == AST_LITERAL ||
-            curr->type == AST_CALL||
-            curr->type == AST_BINOP);
+            bool is_expr = (curr->type == AST_VAR ||
+                curr->type == AST_LITERAL ||
+                curr->type == AST_CALL||
+                curr->type == AST_BINOP);
 
-        if(is_last){
-            if(curr_func->return_type == TYPE_UNIT){
-                if(is_expr){
-                    printf("POPS GF@$tmp1\n");
+            if(is_last){
+                if(curr_func->return_type == TYPE_UNIT){
+                    if(is_expr){
+                        printf("POPS GF@$tmp1\n");
+                    }
+                printf("PUSHS string@()\n");
+                } else {
+                    if (is_expr && curr->return_type == TYPE_INT && curr_func->return_type == TYPE_DOUBLE) {
+                        printf("INT2FLOATS\n");
+                    }
                 }
-            printf("PUSHS string@()\n");
-            } else {
-                if (is_expr && curr->return_type == TYPE_INT && curr_func->return_type == TYPE_DOUBLE) {
-                    printf("INT2FLOATS\n");
-                }
-            }
             
-        } else {
-            if (is_expr) {
-                printf("POPS GF@$tmp1\n");
+            } else {
+                if (is_expr) {
+                    printf("POPS GF@$tmp1\n");
+            }
+
+
+    
         }
-
-
     curr = curr->next; //posun cyklu
-    }
     }
 
 }
 
-//TODO: potreba zkontrolovat
 void ast_return(ast_node_t *node){
 
     if(node->data.node_return.var != NULL){
@@ -593,7 +597,7 @@ void ast_return(ast_node_t *node){
     }
 
     if(node->data.node_return.func_def->return_type == TYPE_UNIT){
-        if(node->data.node_return.var != NULL && node->data.node_return.var->return_type != TYPE_UNIT){
+        if(node->data.node_return.var != NULL){
             printf("POPS GF@$tmp1\n");
         }
         printf("PUSHS string@()\n");
@@ -607,7 +611,6 @@ void ast_return(ast_node_t *node){
     }
     printf("JUMP $end_func_%s\n", node->data.node_return.func_def->data.func.name);
 }
-
 
 void ast_func_def(ast_node_t *node){
 
