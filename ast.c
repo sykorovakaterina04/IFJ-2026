@@ -60,6 +60,9 @@ ast_node_t *ast_create_if(ast_node_t *cond, ast_node_t *body, ast_node_t *else_b
 }
 
 ast_node_t *ast_create_var(char *name, data_type_t type, frame_t frame, int line){
+
+    if(name == NULL) return NULL;
+
     ast_node_t *var = ast_create_node(AST_VAR);
 
     var->data.variable.name = malloc(strlen(name)+1);
@@ -76,6 +79,9 @@ ast_node_t *ast_create_var(char *name, data_type_t type, frame_t frame, int line
 }
 
 ast_node_t *ast_create_var_def(char *name, data_type_t type, int line){
+
+    if(name == NULL) return NULL;
+
     ast_node_t *var_def = ast_create_node(AST_VAR_DEF);
 
     var_def->data.variable.name = malloc(strlen(name)+1);
@@ -100,6 +106,9 @@ ast_node_t *ast_create_while(ast_node_t *cond, ast_node_t *body){
 }
 
 ast_node_t *ast_create_func_def(char *name, ast_node_t *args, ast_node_t *body, int line){
+
+    if(name == NULL) return NULL;
+
     ast_node_t *func_def = ast_create_node(AST_FUNC_DEF);
 
     func_def->data.func.name = malloc(strlen(name)+1);
@@ -116,6 +125,9 @@ ast_node_t *ast_create_func_def(char *name, ast_node_t *args, ast_node_t *body, 
 }
 
 ast_node_t *ast_create_func_call(char *name, ast_node_t *args, int line){
+
+    if(name == NULL) return NULL;
+
     ast_node_t *func_call = ast_create_node(AST_CALL);
 
     func_call->data.func.name = malloc(strlen(name)+1);
@@ -150,6 +162,9 @@ ast_node_t *ast_create_literal_double(double value, int line){
 }
 
 ast_node_t *ast_create_literal_string(char *value, int line){
+
+    if(value == NULL) return NULL;
+
     ast_node_t *literal_string = ast_create_node(AST_LITERAL);
 
     literal_string->data.literal.string_val = malloc(strlen(value)+1);
@@ -173,10 +188,11 @@ ast_node_t *ast_create_literal_unit(int line){
     return literal_unit;
 }
 
-ast_node_t *ast_create_return(ast_node_t *var, int line){
+ast_node_t *ast_create_return(ast_node_t *var, ast_node_t *func_def, int line){
     ast_node_t *ast_return = ast_create_node(AST_RETURN);
 
     ast_return->data.node_return.var = var;
+    ast_return->data.node_return.func_def = func_def;
     ast_return->line = line;
 
     return ast_return;

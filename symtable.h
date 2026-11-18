@@ -30,7 +30,6 @@ typedef struct tnode{
 }tnode_t;
 
 typedef struct tree{
-    int height;
     tnode_t *root;
     struct tree *parent;
 }tree_t;
