@@ -118,6 +118,7 @@ static int st_insert_handle_after(psa_stack_t *stack, int idx) {
 //redukce
 static int psa_reduce(psa_stack_t *stack){
     int h  = stack->top - 1;
+    data_type_t rt = TYPE_ANY;
     while(h >= 0 && stack->items[h].sym != SYM_HANDLE){
         h--;
     }
@@ -324,8 +325,12 @@ int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_ty
             return clean(&stack, res);
         }
 
-        if (in == P_LP) depth++;
-        if (in == P_RP) depth--;
+        if (in == P_LP) {
+            depth++;
+        }
+        if (in == P_RP) {
+            depth--;
+        }
         prev_operand = (in == P_ID || in == P_RP);
         next();
     }
