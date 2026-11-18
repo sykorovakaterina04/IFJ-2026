@@ -7,6 +7,33 @@
 #include <stdio.h>
 #include <string.h>
 
+//pomocne struktry, funkce
+typedef struct {
+    char *func_name;
+    data_type_t *arg_types;
+    int arg_count;
+} pending_call_t;
+
+typedef struct {
+    pending_call_t *items;
+    int count;
+    int capacity;
+} pending_call_list_t;
+
+static pending_call_list_t pending_calls = {NULL, 0, 0};
+
+
+static void pending_calls_free(void);
+static int verify_pending_calls(tree_t *global_symtable);
+static int expr_ended(void);
+static int parse_val_decl(tree_t *global_symtable, tree_t *local_symtable);
+static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_return_type);
+static int parse_assignment(tree_t *global_symtable, tree_t *local_symtable);
+static int parse_if(tree_t *global_symtable, tree_t *local_symtable, indent_stack_t *indent_stack, data_type_t func_return_type);
+static int parse_while(tree_t *global_symtable, tree_t *local_symtable, indent_stack_t *indent_stack, data_type_t func_return_type);
+static int parse_return(tree_t *global_symtable, tree_t *local_symtable, data_type_t func_return_type);
+
+
 //pomocne fce pro parsovani bloku
 static int indent_top(const indent_stack_t *stack){
     return stack->items[stack->top];
@@ -125,7 +152,8 @@ int parse_prologue(){
     while(current_token.type == TOKEN_EOL){
         next();
     }
-    if(current_token.type != KEYWORD_IMPORT){
+
+    if(current_token.type != KEYWORD_IMPORT || current_token.col != 1){
         return 2; // CHYBA
     }
 
@@ -289,7 +317,7 @@ static int parse_type(data_type_t *out_type){
 static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, int *out_param_count){
     *out_param_types = NULL;
     *out_param_count = 0;
-
+ 
     while (current_token.type == TOKEN_EOL)
     {
         next();
@@ -299,21 +327,21 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
     if(current_token.type == TOKEN_RPAREN){
         return 0;
     }
-
+ 
     while(true){
         if(current_token.type != TOKEN_IDENTIFIER){
             free(*out_param_types);
             *out_param_types = NULL;
             return 2;
         }
-
+ 
         //duplicitni nazvy
         if(symtable_lookup_local(local_symtable, current_token.str_val) != NULL){
             free(*out_param_types);
             *out_param_types = NULL;
             return 4;
         }
-
+ 
         //kopie nazvu paramteru
         char *param_name = malloc(strlen(current_token.str_val)+1);
         if(param_name == NULL){
@@ -324,19 +352,23 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
         
         strcpy(param_name, current_token.str_val);
         int param_line = current_token.line;
-
-        next(); // na :
+        next(); // za jmeno
+        while(current_token.type == TOKEN_EOL){
+            next();
+        }
         if(current_token.type != TOKEN_COLON){
             free(*out_param_types);
             free(param_name);
             *out_param_types = NULL;
             return 2;
         }
-
+ 
         next(); // typ parametru
-
+        while(current_token.type == TOKEN_EOL){
+            next();
+        }
         data_type_t param_type;
-
+ 
         int type_res = parse_type(&param_type);
         if(type_res != 0){
             free(*out_param_types);
@@ -344,7 +376,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
             *out_param_types = NULL;
             return type_res; // v type res je ta chyba ktera se stala
         }
-
+ 
         int ins_res = symtable_insert(local_symtable, param_name,PARAM,param_type,param_line);
         free(param_name);
         if(ins_res != 0){
@@ -352,7 +384,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
             *out_param_types = NULL;
             return 99;
         }
-
+ 
         data_type_t *tmp = realloc(*out_param_types, (*out_param_count + 1) * sizeof(data_type_t));
         if (tmp == NULL) {
             free(*out_param_types);
@@ -362,9 +394,11 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
         *out_param_types = tmp;
         (*out_param_types)[*out_param_count] = param_type;
         (*out_param_count)++;
-
-
-
+ 
+        while(current_token.type == TOKEN_EOL){
+             next();
+        }
+ 
         // token , nebo )
         if(current_token.type == TOKEN_COMMA){
             next();
@@ -373,7 +407,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types, i
                 eol = true;
                 next();
             }
-
+ 
             //carka muze byt jen po odradkovani
             if(current_token.type == TOKEN_RPAREN){
                 if(!eol){
@@ -402,7 +436,7 @@ static bool is_type_compatible(data_type_t source, data_type_t target){
     if(target == source) {
         return true;
     }
-    if(target == TYPE_ANY){
+    if(target == TYPE_ANY || source == TYPE_ANY){
         return true;
     }
     if(target == TYPE_DOUBLE && source == TYPE_INT){
@@ -458,21 +492,6 @@ static int expr_ended(){
     return 0;
 }
 
-//pomocne struktry, funkce
-typedef struct {
-    char *func_name;
-    data_type_t *arg_types;
-    int arg_count;
-} pending_call_t;
-
-typedef struct {
-    pending_call_t *items;
-    int count;
-    int capacity;
-} pending_call_list_t;
-
-static pending_call_list_t pending_calls = {NULL, 0, 0};
-
 static void pending_calls_free(void) {
     for (int i = 0; i < pending_calls.count; i++) {
         free(pending_calls.items[i].func_name);
@@ -522,15 +541,18 @@ static int verify_pending_calls(tree_t *global_symtable) {
         pending_call_t *call = &pending_calls.items[i];
         tdata_t *func_sym = symtable_lookup(global_symtable, call->func_name);
         if (func_sym == NULL || func_sym->type != FUNCTION) {
-            return 3; // Nedefinovaná funkce[cite: 8]
+            return 3; // undefined funkce
         }
         if (call->arg_count != func_sym->param_count) {
-            return 5; // Špatný počet argumentů[cite: 8]
+            return 5; //  pocet arg
         }
         for (int j = 0; j < call->arg_count; j++) {
             if (!is_type_compatible(call->arg_types[j], func_sym->param_types[j])) {
-                return 5; // Nekompatibilní typ argumentu[cite: 8]
+                return 5; //  typ arg
             }
+        }
+        if(func_sym->data_type != TYPE_ANY){
+            return 6; // neodvoditelny typ
         }
     }
     return 0;
@@ -581,8 +603,17 @@ static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable, 
 
             if (current_token.type == TOKEN_COMMA) {
                 next();
-                while (current_token.type == TOKEN_EOL) {
-                    next();
+                bool eol = false;
+                while (current_token.type == TOKEN_EOL) { 
+                    eol = true; next(); 
+                }
+                if (current_token.type == TOKEN_RPAREN) {
+                    if (!eol){ 
+                        free(func_name); 
+                        free(arg_types); 
+                        return 2; 
+                    }
+                    break;
                 }
             } else {
                 while (current_token.type == TOKEN_EOL) {
@@ -607,6 +638,11 @@ static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable, 
             free(func_name);
             free(arg_types);
             return 3;
+        }
+        if (func_sym->data_type == TYPE_ANY) { 
+            free(func_name); 
+            free(arg_types); 
+            return 6; 
         }
         if (arg_count != func_sym->param_count) {
             free(func_name);
@@ -847,7 +883,9 @@ static int parse_while(tree_t *global_symtable, tree_t *local_symtable,indent_st
 
 static int parse_return(tree_t *global_symtable, tree_t *local_symtable, data_type_t func_return_type){
     next(); // za return
-
+    if(func_return_type == TYPE_ANY){
+        return 6; // musi byt explicitni typ
+    }
     if (current_token.type == TOKEN_EOL || current_token.type == TOKEN_SEMICOLON || current_token.type == TOKEN_EOF) {
         if(func_return_type != TYPE_UNIT){
             return 6;
@@ -865,7 +903,7 @@ static int parse_return(tree_t *global_symtable, tree_t *local_symtable, data_ty
         return res;
     }
 
-    if(!is_type_compatible(expr_type,func_return_type)){
+    if(!is_type_compatible(expr_type,func_return_type) && func_return_type != TYPE_UNIT){
         return 6;
     }
     return 0;
@@ -994,7 +1032,8 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
     next(); // posun za )
 
     //volitelny navratovy typ
-    data_type_t return_type = TYPE_UNIT;
+    data_type_t return_type = TYPE_ANY;
+    bool explicit_type = false;
     if(current_token.type == TOKEN_COLON){
         next(); //za :
         res = parse_type(&return_type);
@@ -1004,9 +1043,11 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
             symtable_destroy_tree(local_symtable);
             return res;
         }
+        explicit_type = true;
     }
 
-    int ins_res = symtable_insert(global_symtable, func_name,FUNCTION,return_type,func_line);
+    int ins_res = symtable_insert_func(global_symtable, func_name,return_type,func_line,param_count,param_types);
+    tdata_t *fn = symtable_lookup(global_symtable,func_name);
     free(func_name);
     free(param_types);
     if(ins_res!=0){
@@ -1041,9 +1082,18 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack) {
             return res;
         }
 
-        if(!is_type_compatible(body_type,return_type)){
-            symtable_destroy_tree(local_symtable);
-            return 6;
+        if(explicit_type){
+            // v Unit funkci se zahazuje, jinak musi byt dobre
+            if(return_type != TYPE_UNIT && !is_type_compatible(body_type, return_type)){
+                symtable_destroy_tree(local_symtable);
+                return 6;
+            }
+        }else{
+            if(body_type == TYPE_ANY){        // typ nelze odvodit
+                symtable_destroy_tree(local_symtable);
+                return 6;
+            }
+            fn->data_type = body_type;
         }
 
         if (current_token.type  != TOKEN_EOL && current_token.type != TOKEN_EOF){
@@ -1094,6 +1144,7 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
     next();
     if (current_token.type == TOKEN_COLON) {
         next();
+        
     if (current_token.type == KEYWORD_INT || current_token.type == KEYWORD_DOUBLE || current_token.type == KEYWORD_STRING) {  
           return 6; // @main musi mit navratovy typ  unit pokud je tam jiny je to chyba 6
         }
@@ -1131,7 +1182,6 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack){
         res = parse_rs(global_symtable,local_symtable,&body_type);
         if (res == 0){
             if(!is_type_compatible(body_type,TYPE_UNIT)){
-                symtable_destroy_tree(local_symtable);
                 res =  6;
             }else if(current_token.type  != TOKEN_EOL && current_token.type != TOKEN_EOF){
                 res = 2;
