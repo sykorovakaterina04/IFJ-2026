@@ -1,6 +1,30 @@
- #include "expr_parser.h"
- #include "parser.h"
+#include "expr_parser.h"
+#include "parser.h"
+#include <stdlib.h>
+#include <string.h>
 
+//symboly precedenci synt analyzy
+
+enum {
+    P_UN = 0,   // unarni + -
+    P_MUL,      // * /
+    P_ADD,      // binarni + -
+    P_REL,      // < <= > >=
+    P_EQ,       // == !=
+    P_LP,       // (
+    P_RP,       // )
+    P_ID,       // operand (i)
+    P_END,      // $
+    P_TERM_COUNT,
+    SYM_E = P_TERM_COUNT,   // neterminal E
+    SYM_HANDLE              // zarazka <
+};
+
+//precednci tabulka
+
+static const char PSA_TABLE[P_TERM_COUNT][P_TERM_COUNT]= {
+
+};
 
 
 int parse_expression(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, bool is_condition){
