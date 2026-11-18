@@ -7,6 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int sem_check(ast_tree_t *tree);
+int sem_check(ast_tree_t *tree, tree_t *global_symtable);
 
 #endif

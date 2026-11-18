@@ -2,14 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int sem_check(ast_tree_t *tree, tree_t *global_symtable) {
-	int error = 0;
-
-	sem_check_node(tree->root, global_symtable);
-
-	return error;
-}
-
 void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error){
 	if(node == NULL || *error != 0){
         return;
@@ -67,3 +59,12 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error){
     sem_check_node(node->next, local_symtable, error);
 
 }
+
+int sem_check(ast_tree_t *tree, tree_t *global_symtable) {
+	int error = 0;
+
+	sem_check_node(tree->root, global_symtable, error);
+
+	return error;
+}
+
