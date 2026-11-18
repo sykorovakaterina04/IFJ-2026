@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int sem_check(ast_tree_t *tree) {
-	(void)tree;
-	
+int sem_check(ast_tree_t *tree, tree_t *global_symtable) {
 	int error = 0;
+
+	sem_check_node(tree->root, global_symtable);
 
 	return error;
 }
