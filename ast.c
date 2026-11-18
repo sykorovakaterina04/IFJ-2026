@@ -198,7 +198,7 @@ ast_node_t *ast_create_return(ast_node_t *var, ast_node_t *func_def, int line){
     return ast_return;
 }
 
-static void ast_destroy_node(ast_node_t *node){
+void ast_destroy_node(ast_node_t *node){
 
     if(node == NULL){
         return;

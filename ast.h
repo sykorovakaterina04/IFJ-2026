@@ -119,6 +119,8 @@ ast_node_t *ast_create_literal_unit(int line);
 
 ast_node_t *ast_create_return(ast_node_t *var, ast_node_t *func_def, int line);
 
+void ast_destroy_node(ast_node_t *node);
+
 void ast_destroy_tree(ast_tree_t *tree);
 
 #endif
