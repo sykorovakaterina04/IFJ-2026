@@ -269,7 +269,6 @@ int parse(ast_tree_t **out_ast) {
 
     result = parse_prologue();
     if (result != 0) {
-        cleanup_parser(global_symtable,&indent_stack);
         return parse_fail(2,head,ast,global_symtable,&indent_stack); // CHYBA // Chyba v prologu
     }
 
@@ -336,6 +335,7 @@ int parse(ast_tree_t **out_ast) {
 
     }
     cleanup_parser(global_symtable,&indent_stack);
+    ast->root = head;
     *out_ast = ast;
     return 0; // 
 }
@@ -972,7 +972,7 @@ static int parse_if(tree_t *global_symtable, tree_t *local_symtable,indent_stack
         return 99;
     }
 
-    res = parse_block(global_symtable, then_symtable, indent_stack, func_return_type, &else_);
+    res = parse_block(global_symtable, else_symtable, indent_stack, func_return_type, &else_);
     if (res != 0) {
         symtable_destroy_tree(else_symtable);
         ast_destroy_node(cond);
@@ -1257,7 +1257,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack, ast_no
     }    
 
 
-if (current_token.type == TOKEN_EOL) {
+    else if (current_token.type == TOKEN_EOL) {
     func ->return_type = return_type;
     current_func = func;
         // viceradkova funkce

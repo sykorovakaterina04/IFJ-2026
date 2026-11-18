@@ -118,7 +118,6 @@ static int st_insert_handle_after(psa_stack_t *stack, int idx) {
 //redukce
 static int psa_reduce(psa_stack_t *stack){
     int h  = stack->top - 1;
-    data_type_t rt = TYPE_ANY;
     while(h >= 0 && stack->items[h].sym != SYM_HANDLE){
         h--;
     }
@@ -154,12 +153,14 @@ static int psa_reduce(psa_stack_t *stack){
         res.node = n; res.type = t; res.line = r[0].line;
  
     } else if (k == 3 && r[0].sym == SYM_E && r[2].sym == SYM_E && (r[1].sym == P_MUL || r[1].sym == P_ADD || r[1].sym == P_REL || r[1].sym == P_EQ)) {
-        data_type_t rt;                                      // E -> E op E
         binop_type_t bt = tok_to_binop(r[1].tok);
         if (bt == DIV && r[0].type == TYPE_INT && r[2].type == TYPE_INT) bt = IDIV;
+        data_type_t rt = binop_result_type(bt, r[0].type, r[2].type);
         res.node = ast_create_binop(bt, r[0].node, r[2].node, r[1].line);
+        if (res.node == NULL) return 99;
         res.node->return_type = rt;
-        res.type = rt; res.line = r[1].line;
+        res.type = rt;
+        res.line = r[1].line;
  
     } else if (k == 3 && r[0].sym == P_LP && r[1].sym == SYM_E && r[2].sym == P_RP) {  // E -> (E)
         res.node = r[1].node; res.type = r[1].type; res.line = r[1].line;
@@ -171,6 +172,26 @@ static int psa_reduce(psa_stack_t *stack){
     stack->top = h;                 // odstrani pravou stranu i zarazku
     return st_push(stack, res);
 }
+
+
+// EQ, NEQ, LT, GT, LEQ, GEQ
+static data_type_t binop_result_type(binop_type_t op, data_type_t l, data_type_t r) {
+    if (op >= EQ) {
+        return TYPE_BOOL;
+    }                 
+    if (l == TYPE_ANY || r == TYPE_ANY) {
+        return TYPE_ANY;
+    }
+    if (op == ADD && l == TYPE_STRING && r == TYPE_STRING) {
+        return TYPE_STRING;
+    }
+    if ((l == TYPE_INT || l == TYPE_DOUBLE) && (r == TYPE_INT || r == TYPE_DOUBLE)){
+        return (l == TYPE_DOUBLE || r == TYPE_DOUBLE) ? TYPE_DOUBLE : TYPE_INT;
+    }
+        
+    return TYPE_ANY;                                
+}
+
 
 //operandy
 static int make_operand(psa_item_t *it, tree_t *local_symtable) {
@@ -194,8 +215,12 @@ static int make_operand(psa_item_t *it, tree_t *local_symtable) {
         it->type = TYPE_UNIT;
         break;
     case TOKEN_IDENTIFIER: {
-        it->type = TYPE_ANY;
-        it->node = ast_create_var(current_token.str_val, TYPE_ANY, LOCAL, line);
+        tdata_t *sym = symtable_lookup(local_symtable,current_token.str_val);
+        if(sym==NULL || sym->type == FUNCTION){
+            return 3;
+        }
+        it->type = sym->data_type;
+        it->node = ast_create_var(current_token.str_val, sym->data_type, LOCAL, line);
         break;
     }
     default:
@@ -211,13 +236,7 @@ static int make_operand(psa_item_t *it, tree_t *local_symtable) {
 static int clean(psa_stack_t *stack, int err_code) {
     if (stack->items != NULL) {
         for (int i = 0; i < stack->top; i++) {
-            if (stack->items[i].node != NULL) {
-                ast_tree_t *tmp = ast_init();
-                if (tmp != NULL) {
-                    tmp->root = stack->items[i].node;
-                    ast_destroy_tree(tmp);
-                }
-            }
+            ast_destroy_node(stack->items[i].node);
         }
         free(stack->items);
         stack->items = NULL;
@@ -242,7 +261,7 @@ int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_ty
         int top_sym = stack.items[ti].sym;
 
         // EOL muze byt uvnitr zavorek nebo hned za operatorem
-        if (current_token.type == TOKEN_EOL && (in_parens || depth > 0 || top_sym <= P_EQ)) {
+        if (current_token.type == TOKEN_EOL && (in_parens || depth > 0)) {
             next();
             continue;
         }
@@ -336,17 +355,13 @@ int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_ty
     }
 
     // predani uzlu
-    if (out_type!=NULL) {
-        *out_type = TYPE_ANY;
+    if (out_type != NULL) {
+        *out_type = stack.items[1].type;
     }
-    if (out_node!= NULL) {
+    if (out_node != NULL) {
         *out_node = stack.items[1].node;
-    } else if (stack.items[1].node != NULL) {
-        ast_tree_t *tmp = ast_init();
-        if (tmp != NULL) {
-            tmp->root = stack.items[1].node;
-            ast_destroy_tree(tmp);
-        }
+    } else {
+        ast_destroy_node(stack.items[1].node);
     }
     
     free(stack.items);
