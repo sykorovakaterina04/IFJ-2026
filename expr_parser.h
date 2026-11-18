@@ -6,7 +6,7 @@
 #include "ast.h"
 #include <stdbool.h>
 
-int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, ast_node_t **out_node,bool is_condition, bool in_parens);
+int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, ast_node_t **out_node,bool is_condition, bool in_parens); 
 
 
 int parse_expression(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, bool is_condition);

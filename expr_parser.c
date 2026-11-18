@@ -30,3 +30,7 @@ int parse_expression(tree_t *global_symtable, tree_t *local_symtable, data_type_
     *out_type = TYPE_UNIT;
     return 0;
 }
+
+int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, ast_node_t **out_node,bool is_condition, bool in_parens){
+
+    }
