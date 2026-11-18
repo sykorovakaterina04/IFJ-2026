@@ -503,7 +503,7 @@ void ast_while(ast_node_t *node){
 
 }
 
-
+//TODO: poresit podminku pro moment kdy se ast block nachazi ve funkci a nesmi zahodi vysledek
 void ast_block(ast_node_t *node){
 
     if(node->data.block.first_line == NULL){
@@ -529,16 +529,36 @@ void ast_block(ast_node_t *node){
 
 }
 
+void ast_return(ast_node_t *node){
+
+    if(node->data.node_return.var == NULL && node->data.node_return.func_def->return_type == TYPE_UNIT){
+        printf("PUSHS string@()\n");
+    }
+
+    if(node->data.node_return.func_def->return_type == TYPE_UNIT){
+        if(node->data.node_return.var != NULL && node->data.node_return.var->return_type != TYPE_UNIT){
+            printf("POPS GF@$tmp1\n");
+        }
+    }
+
+    if(node->data.node_return.var != NULL){
+        projdi_strom(node->data.node_return.var);
+    }
+
+    if(node->data.node_return.var->return_type == TYPE_INT && node->data.node_return.func_def->return_type == TYPE_DOUBLE){
+        if (node->data.node_return.var->type != AST_LITERAL && node->data.node_return.var->type != AST_VAR){
+            printf("INT2FLOATS\n");
+        }
+    }
+
+    printf("JUMP $func_end_%s\n", node->data.node_return.func_def->data.func.name);
+}
+
 
 /*
 
 
 void ast_func_def(ast_node_t *node){
-
-}
-
-void ast_return(ast_node_t *node){
-
 
 }
 
@@ -574,11 +594,11 @@ void zpracuj_uzel(ast_node_t *node){
             case AST_BLOCK:
                     ast_block(node);
                 break;
+            case AST_RETURN:
+                    ast_return(node);
+                break;
             case AST_FUNC_DEF:
                 //WIP3
-                break;
-            case AST_RETURN:
-                //TODO
                 break;
             default:
                 break;
