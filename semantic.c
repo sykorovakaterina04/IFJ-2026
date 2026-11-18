@@ -2,6 +2,66 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error);
+
+bool is_numeric(data_type_t type) {
+	return (type == TYPE_INT || type == TYPE_DOUBLE);
+}
+
+bool is_relational_op(binop_type_t type) {
+	return (type == EQ || type == NEQ || type == LT || type == GT ||
+			type == LEQ || type == GEQ);
+}
+
+void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
+	sem_check_node(node->data.binop.left, local_symtable, error);
+	sem_check_node(node->data.binop.right, local_symtable, error);
+	if (*error != 0) {
+		return;
+	}
+
+	data_type_t left_type = node->data.binop.left->return_type;
+	data_type_t right_type = node->data.binop.right->return_type;
+
+	if (node->data.binop.type == ADD) {
+		if (left_type == TYPE_INT && right_type == TYPE_INT) {
+			node->return_type = TYPE_INT;
+		} else if ((left_type == TYPE_DOUBLE && right_type == TYPE_DOUBLE) ||
+				   (left_type == TYPE_DOUBLE && right_type == TYPE_INT) ||
+				   (left_type == TYPE_INT && right_type == TYPE_DOUBLE)) {
+			node->return_type = TYPE_DOUBLE;
+		} else if (left_type == TYPE_STRING && right_type == TYPE_STRING) {
+			node->return_type = TYPE_STRING;
+		} else {
+			*error = 6;
+		}
+	}
+	if (node->data.binop.type == SUB || node->data.binop.type == MUL ||
+		node->data.binop.type == DIV) {
+		if (left_type == TYPE_INT && right_type == TYPE_INT) {
+			node->return_type = TYPE_INT;
+		} else if ((left_type == TYPE_DOUBLE && right_type == TYPE_DOUBLE) ||
+				   (left_type == TYPE_DOUBLE && right_type == TYPE_INT) ||
+				   (left_type == TYPE_INT && right_type == TYPE_DOUBLE)) {
+			node->return_type = TYPE_DOUBLE;
+		} else {
+			*error = 6;
+		}
+	}
+
+	// TODO: dodelat
+	//  relacni operatory
+	//  if (is_relational_op(node->data.binop.type)) {
+	//      if (is_numeric(left_type) && is_numeric(right_type)) {
+
+	//     } else if (){
+
+	//     } else {
+	//         *error = 6;
+	//     }
+	// }
+}
+
 void check_var(ast_node_t *node, tree_t *local_symtable, int *error) {
 	char *var_name = node->data.variable.name;
 	tdata_t *data = symtable_lookup(local_symtable, var_name);
@@ -24,8 +84,8 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		break;
 
 	case AST_BINOP:
-		sem_check_node(node->data.binop.left, local_symtable, error);
-		sem_check_node(node->data.binop.right, local_symtable, error);
+
+		check_binop(node, local_symtable, error);
 		break;
 
 	case AST_BLOCK:
