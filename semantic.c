@@ -57,6 +57,7 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		break;
 
 	case AST_VAR:
+		check_var(node, local_symtable, error);
 		break;
 
 	case AST_LITERAL:
