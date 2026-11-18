@@ -60,14 +60,16 @@ tdata_t * symtable_lookup(const tree_t *tree, const char *key){
         return NULL;
     }
 
-    tnode_t *tmp = tree->root;
     tdata_t *data = NULL;
     
 
-    while(tmp){
-        data = symtable_lookup(tree->parent, key);
+    while(tree){
 
-        if(!data && data->active) return data;
+        data = symtable_lookup_local(tree->parent, key);
+        tree = tree->parent;
+        
+
+        if(data && data->active) return data;
     }
     return NULL;
 }
@@ -179,7 +181,7 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
         if(symtable_getbalance(node->right) <= 0){
             return symtable_lrotate(node);
         }
-        if(symtable_getbalance(node) > 0){
+        if(symtable_getbalance(node->right) > 0){
             node->right = symtable_rrotate(node->right);
             return symtable_lrotate(node);
         }  
