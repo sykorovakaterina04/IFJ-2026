@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
+static data_type_t binop_result_type(binop_type_t op, data_type_t l, data_type_t r);
 //symboly precedenci synt analyzy
 
 enum {
@@ -245,7 +248,8 @@ static int clean(psa_stack_t *stack, int err_code) {
 }
 
 int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, ast_node_t **out_node, bool is_condition, bool in_parens) {
-
+    (void)global_symtable;//tmp
+    (void)is_condition;
     psa_stack_t stack = {NULL, 0, 0};
     psa_item_t dollar = {0};
     dollar.sym = P_END;
@@ -364,8 +368,8 @@ int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_ty
         ast_destroy_node(stack.items[1].node);
     }
     
-    free(stack.items);
     
+    stack.items[1].node = NULL;
     return clean(&stack,0);
 }
 int parse_expression(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, bool is_condition){

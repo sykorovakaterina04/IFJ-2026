@@ -525,14 +525,14 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable, inde
     case TOKEN_IDENTIFIER:{
         token_t next_token = peek_token();
         if(next_token.type == TOKEN_LPAREN){
-            data_type_t tmp_ret;
+            
             res = parse_function_call(global_symtable,local_symtable,&tmp,out_node);
             
         }else if(next_token.type == TOKEN_ASSIGN){
             res = parse_assignment(global_symtable,local_symtable,out_node);
 
         }else{
-            data_type_t tmp_expr;
+        
             res = parse_expression_ex(global_symtable,local_symtable,&tmp,out_node,false,false);
         }
         return finish_simple(res,out_node);
