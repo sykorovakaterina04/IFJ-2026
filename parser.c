@@ -204,7 +204,8 @@ int parse_prologue(){
     skip_eol();
 
     if(current_token.type != KEYWORD_IMPORT || current_token.col != 1){
-        return 2; // CHYBA
+        //return 2; // CHYBA
+        
     }
 
     next(); // druhy token musi byt ifj
