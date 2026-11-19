@@ -427,7 +427,7 @@ void ast_literal(ast_node_t *node){
  * 
  * @param node 
  */
-void ast_var_def(ast_node_t *node){
+void ast_var_def(void){
 
     //samotna funkce nesmi nic tisknout
     //DEFVAR ted tiskne pouze ast_func_def pomoci funkce definuj_defvar
@@ -818,7 +818,7 @@ void zpracuj_uzel(ast_node_t *node){
                     ast_binop(node);
                 break;
             case AST_VAR_DEF:
-                    ast_var_def(node);
+                    ast_var_def();
                 break;
             case AST_VAR:
                     ast_var(node);
