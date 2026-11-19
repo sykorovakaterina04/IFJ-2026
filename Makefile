@@ -5,11 +5,10 @@ CFLAGS = -Wall -Wextra -std=c11 -g
 .PHONY all run build check build-check test clean
 
 TARGET = IFJ6
-SRC_DIR = src
 OBJ_DIR = obj
 
-SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
+SRCS = $(wildcard *.c)
+OBJS = $(patsubst $(%.c, $(OBJ_DIR)/%.o, $(SRCS)))
 
 
 all: build
@@ -19,7 +18,7 @@ build: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: %.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
