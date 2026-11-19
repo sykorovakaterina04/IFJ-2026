@@ -534,6 +534,14 @@ void ast_binop(ast_node_t *node){
 void ast_assign(ast_node_t *node){
 
     zpracuj_uzel(node->data.assign.source); //vyhodnoceni zdroje, ktery muze byt typu AST_LITERAL, AST_VAR, AST_BINOP nebo AST_CALL
+
+      if(node->data.assign.source->type != AST_LITERAL && // AST_LITERAL a AST_VAR si konverze resi samy
+        node->data.assign.source->type != AST_VAR &&
+        node->data.assign.source->return_type == TYPE_INT &&
+        node->data.assign.dest->data.variable.type == TYPE_DOUBLE){
+            printf("INT2FLOATS\n");
+    }
+
     printf("POPS "); //Predani z vrcholu zasobniku
     print_var(node->data.assign.dest);
     printf("\n");
@@ -690,7 +698,8 @@ void ast_block(ast_node_t *node){
                 printf("PUSHS string@()\n");
                 } else {
                     //konverze 
-                    if (is_expr && curr->return_type == TYPE_INT && curr_func->return_type == TYPE_DOUBLE) {
+                    if ((curr->type == AST_CALL || curr->type == AST_BINOP)
+                     && curr->return_type == TYPE_INT && curr_func->return_type == TYPE_DOUBLE) {
                         printf("INT2FLOATS\n");
                     }
                 }
@@ -728,6 +737,8 @@ void ast_return(ast_node_t *node){
         printf("PUSHS string@()\n");
     } else {
         if(node->data.node_return.var != NULL &&
+            node->data.node_return.var->type != AST_LITERAL &&
+            node->data.node_return.var->type != AST_VAR &&
             node->data.node_return.var->return_type == TYPE_INT &&
             node->data.node_return.func_def->return_type == TYPE_DOUBLE
             ){
