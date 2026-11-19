@@ -174,7 +174,7 @@ void next(void){
     }
 }
 
-static void cleanup_parser(tree_t *global_symtable,indent_stack_t *indent_stack ){
+static void cleanup_parser(tree_t *global_symtable,indent_stack_t *indent_stack, bool destroy_global ){
     if (indent_stack != NULL) {
         indent_free(indent_stack);
     }
@@ -183,7 +183,7 @@ static void cleanup_parser(tree_t *global_symtable,indent_stack_t *indent_stack 
         free_token(&ahead_token);
         looked_ahead = false;
     }
-    if (global_symtable != NULL) {
+    if (global_symtable != NULL && destroy_global) {
         symtable_destroy_tree(global_symtable);
     }
     pending_calls_free();
@@ -191,7 +191,7 @@ static void cleanup_parser(tree_t *global_symtable,indent_stack_t *indent_stack 
 static int parse_fail(int chyba, ast_node_t *head, ast_tree_t *ast, tree_t *global_symtable, indent_stack_t *stack) {
     ast_destroy_node(head);
     free(ast);
-    cleanup_parser(global_symtable, stack);
+    cleanup_parser(global_symtable, stack,true);
     return chyba;
 }
 // hotovo zatim az propojeni s lexerem
@@ -333,8 +333,7 @@ int parse(ast_tree_t **out_ast) {
         return parse_fail(3,head,ast,global_symtable,&indent_stack); // CHYBA
 
     }
-    //cleanup_parser(global_symtable,&indent_stack); /////nemazat global_symtable
-    free(&indent_stack);
+    cleanup_parser(global_symtable,&indent_stack,false); /////nemazat global_symtable
     ast->root = head;
     *out_ast = ast;
     return 0; // 
