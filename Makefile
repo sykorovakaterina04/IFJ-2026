@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
 
 .DEFAULT_GOAL := all
-.PHONY all run build check build-check test clean
+.PHONY: all run build check build-check test clean
 
 TARGET = IFJ6
 OBJ_DIR = obj
