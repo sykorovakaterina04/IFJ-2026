@@ -15,6 +15,7 @@ typedef struct {
 
 //aktualni token
 extern token_t current_token;
+extern tree_t *global_symtable;
 extern char *main_func_name;
 // zakladni parser
 token_t get_token(void);
