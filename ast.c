@@ -271,6 +271,7 @@ void ast_destroy_tree(ast_tree_t *tree){
         return;
     }
 
+    symtable_destroy_tree(tree->global_symtable);
     ast_destroy_node(tree->root);
     free(tree);
 }

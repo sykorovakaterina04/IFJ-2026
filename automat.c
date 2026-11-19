@@ -496,7 +496,14 @@ token_t automat(FILE *fptr) {
 			}
 		case KA_LINE_COMMENT:
 			if (c == '\n') {
-				state = KA_START;
+				at_line_start = 1;
+				tab_seen = 0;
+				token.type = TOKEN_EOL;
+				token.str_val = NULL;
+				token.line = current_line -1;
+				token.col = prev_col;
+				return token;
+				
 			} else if (c == EOF) {
 				my_ungetc(c, fptr);
 				state = KA_START;
@@ -560,8 +567,14 @@ token_t automat(FILE *fptr) {
 			if (c == ' ' || c == '\t' || c == '\r') {
 				break;
 			} else if (c == '\n') {
-				state = KA_START;
-				break;
+				at_line_start = 1;
+				tab_seen = 0;
+				token.type = TOKEN_EOL;
+				token.str_val = NULL;
+				token.line = current_line -1;
+				token.col = prev_col;
+				return token;
+				
 			} else if (c == EOF) {
 				my_ungetc(c, fptr);
 				state = KA_START;

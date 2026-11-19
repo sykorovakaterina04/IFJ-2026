@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
 static data_type_t binop_result_type(binop_type_t op, data_type_t l, data_type_t r);
 //symboly precedenci synt analyzy
 
@@ -125,7 +123,7 @@ static int psa_reduce(psa_stack_t *stack){
         h--;
     }
     if(h<0){
-        return 2;
+        return 2;    
     }
     int k = stack ->top - h -1; //delka prave strany
     psa_item_t *r = &stack->items[h + 1];
@@ -169,7 +167,7 @@ static int psa_reduce(psa_stack_t *stack){
         res.node = r[1].node; res.type = r[1].type; res.line = r[1].line;
  
     } else {
-        return 2;
+        return 2;    
     }
  
     stack->top = h;                 // odstrani pravou stranu i zarazku
@@ -228,6 +226,7 @@ static int make_operand(psa_item_t *it, tree_t *local_symtable) {
     }
     default:
         return 2;
+        
     }
     if (it->node == NULL) return 99;
     it->node->return_type = it->type;
@@ -372,6 +371,7 @@ int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable, data_ty
     stack.items[1].node = NULL;
     return clean(&stack,0);
 }
+
 int parse_expression(tree_t *global_symtable, tree_t *local_symtable, data_type_t *out_type, bool is_condition){
     return parse_expression_ex(global_symtable,local_symtable,out_type, NULL,is_condition, false);
 }
