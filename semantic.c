@@ -148,6 +148,12 @@ ast_node_t *find_node_by_type(ast_node_t *node, ast_type_t type) {
 	case AST_RETURN:
 		target_node = find_node_by_type(node->data.node_return.var, type);
 		break;
+<<<<<<< HEAD
+=======
+
+	case AST_NO_TYPE:
+		break;
+>>>>>>> semantic
 	}
 	if (target_node != NULL) {
 		return target_node;
@@ -211,6 +217,9 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 
 	case AST_RETURN:
 		sem_check_node(node->data.node_return.var, local_symtable, error);
+		break;
+	
+	case AST_NO_TYPE:
 		break;
 	}
 	sem_check_node(node->next, local_symtable, error);
