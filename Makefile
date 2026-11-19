@@ -4,11 +4,11 @@ CFLAGS = -Wall -Wextra -std=c11 -g
 .DEFAULT_GOAL := all
 .PHONY: all run build check build-check test clean
 
-TARGET = IFJ6
+TARGET = IFJ26
 OBJ_DIR = obj
 
 SRCS = $(wildcard *.c)
-OBJS = $(patsubst $(%.c, $(OBJ_DIR)/%.o, $(SRCS)))
+OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
 
 
 all: build
