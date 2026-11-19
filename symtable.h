@@ -15,7 +15,6 @@ typedef struct tdata{
     node_type_t type;
     data_type_t data_type; //aji return type v pripade funkci
     bool modifiable;
-    bool active;
     int line;
     int param_count;
     data_type_t *param_types;
