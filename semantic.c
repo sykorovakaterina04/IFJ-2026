@@ -148,12 +148,9 @@ ast_node_t *find_node_by_type(ast_node_t *node, ast_type_t type) {
 	case AST_RETURN:
 		target_node = find_node_by_type(node->data.node_return.var, type);
 		break;
-<<<<<<< HEAD
-=======
 
 	case AST_NO_TYPE:
 		break;
->>>>>>> semantic
 	}
 	if (target_node != NULL) {
 		return target_node;
