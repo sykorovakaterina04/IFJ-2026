@@ -67,7 +67,7 @@ void zpracuj_uzel(ast_node_t *node);
 
 void projdi_strom(ast_node_t *node);
 
-void generuj_kodu(ast_tree_t *tree);
+void generuj_kod(ast_tree_t *tree);
 
 //konec ridicich funkci
 
