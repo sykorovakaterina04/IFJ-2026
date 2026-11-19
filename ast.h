@@ -6,7 +6,7 @@
 #include "symtable.h"
 
 typedef enum {
-    AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
+    AST_NO_TYPE, AST_FUNC_DEF, AST_VAR_DEF, AST_ASSIGN, 
     AST_IF, AST_WHILE, AST_CALL, 
     AST_BINOP, AST_VAR, AST_LITERAL, AST_BLOCK,
     AST_RETURN
