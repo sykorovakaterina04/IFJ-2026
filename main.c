@@ -12,12 +12,11 @@ int main(void){
     }
 
     error = sem_check(ast);
-
-    error = parse(&ast);
-    if (error){
+    if(error){
         ast_destroy_tree(ast);
         return error;
     }
+
 
     generuj_kod(ast);
 
