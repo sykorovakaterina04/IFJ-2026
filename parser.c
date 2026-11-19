@@ -275,7 +275,7 @@ int parse(ast_tree_t **out_ast) {
     while (current_token.type != TOKEN_EOF) {
         switch (current_token.type) {
             case KEYWORD_DEF:
-                ast_node_t *func = NULL;
+                ast_node_t *func = {NULL};
                 result = parse_function(global_symtable, &indent_stack,&func);
                 if (result != 0){
                     
@@ -291,7 +291,6 @@ int parse(ast_tree_t **out_ast) {
             case TOKEN_AT_MAIN:
 
                 if(current_token.col != indent_top(&indent_stack)){
-                    cleanup_parser(global_symtable,&indent_stack);
                     return parse_fail(2,head,ast,global_symtable,&indent_stack); // CHYBA
                 }
                 next();
@@ -331,10 +330,11 @@ int parse(ast_tree_t **out_ast) {
     }
 
     if(main != 1){
-                    return parse_fail(3,head,ast,global_symtable,&indent_stack); // CHYBA
+        return parse_fail(3,head,ast,global_symtable,&indent_stack); // CHYBA
 
     }
-    cleanup_parser(global_symtable,&indent_stack);
+    //cleanup_parser(global_symtable,&indent_stack); /////nemazat global_symtable
+    free(&indent_stack);
     ast->root = head;
     *out_ast = ast;
     return 0; // 
