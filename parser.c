@@ -1256,19 +1256,19 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack, ast_no
     }    
 
 
-    else if (current_token.type == TOKEN_EOL) {
-    func ->return_type = return_type;
-    current_func = func;
-        // viceradkova funkce
-    res = parse_block(global_symtable, local_symtable, indent_stack, return_type, &func->data.func.body);
-    current_func = NULL;
-    if (res != 0) {
-        symtable_destroy_tree(local_symtable);
-        ast_destroy_node(func);
-        return res;
-    }
-    } 
-    if (!explicit_type) {
+    if (current_token.type == TOKEN_EOL) {
+        func ->return_type = return_type;
+        current_func = func;
+            // viceradkova funkce
+        res = parse_block(global_symtable, local_symtable, indent_stack, return_type, &func->data.func.body);
+        current_func = NULL;
+        if (res != 0) {
+            symtable_destroy_tree(local_symtable);
+            ast_destroy_node(func);
+            return res;
+        }
+     
+        if (!explicit_type) {
 
         //DODELAT ZATIM JE UNIT MA SE TO ODVODIT Z POSLEDNIHO
         return_type = TYPE_UNIT;
@@ -1278,7 +1278,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack, ast_no
     }
     
     
-    if (current_token.type == TOKEN_EOF) {
+    }else if (current_token.type == TOKEN_EOF) {
         symtable_destroy_tree(local_symtable);
         ast_destroy_node(func);
         return 2;
