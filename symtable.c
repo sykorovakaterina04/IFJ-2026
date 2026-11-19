@@ -61,7 +61,7 @@ tdata_t * symtable_lookup(const tree_t *tree, const char *key){
         tree = tree->parent;
         
 
-        if(data && data->active) return data;
+        if(data) return data;
     }
     return NULL;
 }
@@ -122,10 +122,6 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
             new_node->data.modifiable = true;
         } else {
             new_node->data.modifiable = false;
-        }
-
-        if(new_node->data.type == FUNCTION || new_node->data.type == PARAM){
-            new_node->data.active = true;
         }
 
         new_node->data.line = line;
