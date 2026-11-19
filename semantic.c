@@ -216,10 +216,10 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 	sem_check_node(node->next, local_symtable, error);
 }
 
-int sem_check(ast_tree_t *tree, tree_t *global_symtable) {
+int sem_check(ast_tree_t *tree) {
 	int error = 0;
 
-	sem_check_node(tree->root, global_symtable, &error);
+	sem_check_node(tree->root, tree->global_symtable, &error);
 
 	return error;
 }
