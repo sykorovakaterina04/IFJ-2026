@@ -259,6 +259,8 @@ void ast_destroy_node(ast_node_t *node){
         case AST_RETURN:
             ast_destroy_node(node->data.node_return.var);
             break;
+        case AST_NO_TYPE:
+            break;
     }
     ast_destroy_node(node->next);
     free(node);
