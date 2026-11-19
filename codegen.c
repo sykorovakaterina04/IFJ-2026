@@ -90,9 +90,7 @@ void definuj_defvar(ast_node_t *node){
 
     //pokud nazazis na uzel ast_def_var zpracuj ho a vytiskni promennou
     if(node->type == AST_VAR_DEF){
-        printf("DEFVAR ");
-        print_var(node);
-        printf("\n");
+       printf("DEFVAR LF@%s\n", node->data.variable.name);
         //rekurzivni prochazeni pri kazdem pripade bloku kodu - vytahne vsechny DEFVAR na zacatek funkce
     } else if(node->type == AST_BLOCK){
         for(ast_node_t *line = node->data.block.first_line; line != NULL; line = line->next){
