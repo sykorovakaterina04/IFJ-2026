@@ -84,11 +84,11 @@ ast_node_t *find_node(ast_node_t *node, ast_type_t type, char *func_name, char *
 
 	if(type == AST_NO_TYPE || node->type == type){
 		if(func_name != NULL){
-			if((node->type == AST_FUNC_DEF || node->type == AST_CALL) && node->data.func.name != NULL && strcmp(node->data.func.name, func_name)){
+			if((node->type == AST_FUNC_DEF || node->type == AST_CALL) && node->data.func.name != NULL && strcmp(node->data.func.name, func_name) == 0){
 				return node;
 			}
 		} else if (var_name != NULL){
-			if((node->type == AST_VAR_DEF || node->type == AST_VAR) && node->data.variable.name != NULL && strcmp(node->data.func.name, var_name)){
+			if((node->type == AST_VAR_DEF || node->type == AST_VAR) && node->data.variable.name != NULL && strcmp(node->data.variable.name, var_name) == 0){
 				return node;
 			}
 		}else if (type != AST_NO_TYPE){
