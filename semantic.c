@@ -13,7 +13,23 @@ bool is_relational_op(binop_type_t type) {
 			type == LEQ || type == GEQ);
 }
 
+void convert_int_to_double(ast_node_t *operand) {
+	if (operand == NULL) {
+		return;
+	}
+	if (operand->type == AST_VAR && operand->data.variable.type == TYPE_INT) {
+		operand->data.variable.conversion_type = TYPE_DOUBLE;
+	} else if (operand->type == AST_LITERAL &&
+			   operand->data.literal.type == TYPE_INT) {
+		operand->data.literal.conversion_type = TYPE_DOUBLE;
+	}
+}
+
 void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
 	sem_check_node(node->data.binop.left, local_symtable, error);
 	sem_check_node(node->data.binop.right, local_symtable, error);
 	if (*error != 0) {
@@ -26,10 +42,10 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node->data.binop.type == ADD) {
 		if (left_type == TYPE_INT && right_type == TYPE_INT) {
 			node->return_type = TYPE_INT;
-		} else if ((left_type == TYPE_DOUBLE && right_type == TYPE_DOUBLE) ||
-				   (left_type == TYPE_DOUBLE && right_type == TYPE_INT) ||
-				   (left_type == TYPE_INT && right_type == TYPE_DOUBLE)) {
+		} else if (is_numeric(left_type) && is_numeric(right_type)) {
 			node->return_type = TYPE_DOUBLE;
+			convert_int_to_double(node->data.binop.left);
+			convert_int_to_double(node->data.binop.right);
 		} else if (left_type == TYPE_STRING && right_type == TYPE_STRING) {
 			node->return_type = TYPE_STRING;
 		} else {
@@ -39,10 +55,10 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 			   node->data.binop.type == DIV) {
 		if (left_type == TYPE_INT && right_type == TYPE_INT) {
 			node->return_type = TYPE_INT;
-		} else if ((left_type == TYPE_DOUBLE && right_type == TYPE_DOUBLE) ||
-				   (left_type == TYPE_DOUBLE && right_type == TYPE_INT) ||
-				   (left_type == TYPE_INT && right_type == TYPE_DOUBLE)) {
+		} else if (is_numeric(left_type) && is_numeric(right_type)) {
 			node->return_type = TYPE_DOUBLE;
+			convert_int_to_double(node->data.binop.left);
+			convert_int_to_double(node->data.binop.right);
 		} else {
 			*error = 6;
 		}
@@ -52,10 +68,7 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 		} else {
 			*error = 6;
 		}
-	}
-
-	// relacni operatory
-	if (is_relational_op(node->data.binop.type)) {
+	} else if (is_relational_op(node->data.binop.type)) {
 		if (is_numeric(left_type) && is_numeric(right_type)) {
 			node->return_type = TYPE_BOOL;
 		} else if (left_type == TYPE_STRING && right_type == TYPE_STRING) {
@@ -63,16 +76,23 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 		} else {
 			*error = 6;
 		}
+	} else {
+		*error = 6;
 	}
 }
 
 void check_var(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
 	char *var_name = node->data.variable.name;
 	tdata_t *data = symtable_lookup(local_symtable, var_name);
 	if (data == NULL) {
 		*error = 3;
 	} else {
 		node->data.variable.type = data->data_type;
+		node->return_type = data->data_type;
 	}
 }
 
