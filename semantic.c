@@ -173,6 +173,25 @@ ast_node_t *find_node(ast_node_t *node, ast_type_t type, char *func_name, char *
 	return find_node(node->next, type, func_name, var_name);
 }
 
+void check_func(ast_node_t *node, int *error){
+
+	if(node == NULL || *error != 0) return;
+
+	bool is_recursive = false;
+
+	if (find_node(node->data.func.body, AST_CALL, node->data.func.name, NULL)){
+		is_recursive = true;
+	}
+
+	if (is_recursive && node->return_type == TYPE_ANY){
+		*error = 6;
+		return;
+	}
+
+	
+
+}
+
 void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL || *error != 0) {
 		return;
