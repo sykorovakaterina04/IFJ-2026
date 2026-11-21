@@ -562,9 +562,9 @@ token_t automat(FILE *fptr) {
 				state = KA_START;
 				break;
 			} else if (c == EOF) {
-				my_ungetc(c, fptr);
-				state = KA_START;
-				break;
+				fprintf(stderr,
+						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
+				exit(1);
 			} else {
 				fprintf(stderr,
 						"Lexikalni chyba: za vice radkovym blokovym komentarem "
