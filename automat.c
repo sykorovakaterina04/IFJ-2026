@@ -37,6 +37,7 @@ typedef enum {
 	KA_INT,
 	KA_ZERO,
 	KA_INT_UNDERSCORE,
+	KA_DOT,
 	KA_DOUBLE_DOT,
 	KA_DOUBLE_DECIMAL,
 	KA_DOUBLE_UNDERSCORE,
@@ -311,11 +312,9 @@ token_t automat(FILE *fptr) {
 				return token;
 			}
 			if (c == '.') {
-				token.type = TOKEN_DOT;
-				token.str_val = NULL;
-				token.line = token_start_line;
-				token.col = token_start_col;
-				return token;
+				state = KA_DOT;
+				str_init(&buffer);
+				break;
 			}
 			if (c == '@') {
 				state = KA_AT_M;
@@ -768,6 +767,21 @@ token_t automat(FILE *fptr) {
 			}
 			break;
 		// sekvence stavu pro desetinny literal
+		case KA_DOT:
+			if (isdigit(c)) {
+				str_add_char(&buffer, '0');
+				str_add_char(&buffer, '.');
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_DECIMAL;
+			} else {
+				my_ungetc(c, fptr);
+				str_free(&buffer);
+				token.type = TOKEN_DOT;
+				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
+				return token;
+			}
 		case KA_DOUBLE_DOT:
 			if (isdigit(c)) {
 				str_add_char(&buffer, c);
