@@ -91,6 +91,7 @@ ast_node_t *ast_create_var_def(char *name, data_type_t type, int line){
 
     strcpy(var_def->data.variable.name, name);
     var_def->data.variable.type = type;
+    var_def->return_type = type;
     var_def->line = line;
 
     return var_def;

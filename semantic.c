@@ -263,6 +263,8 @@ bool branch_unit(ast_node_t *node){
 
 	case AST_CALL:
 		return (node->return_type == TYPE_UNIT);
+	case AST_LITERAL:
+		return (node->return_type == TYPE_UNIT);
 	
 	default:
 		return false;
@@ -270,11 +272,48 @@ bool branch_unit(ast_node_t *node){
 }
 
 
+void check_func_2(ast_node_t *node, int *error){
+
+	if(node == NULL)return;
+
+	ast_node_t *first_line = node->data.func.body->data.block.first_line;
+
+	if(first_line == NULL){
+		node->return_type = TYPE_UNIT;
+	}
+
+	ast_node_t *last_line = first_line;
+
+	ast_type_t type;
+
+	while(last_line->next != NULL){
+		last_line = last_line->next;
+	}
+
+	if(node->return_type == TYPE_ANY){
+
+		if(last_line->type == AST_ASSIGN || last_line->type == AST_FUNC_DEF 
+			|| last_line->type == AST_VAR_DEF || last_line->type == AST_WHILE){
+				type = TYPE_UNIT;
+			}
+
+		if(last_line->type == AST_IF){
+
+			if(branch_unit(last_line)){
+				type == TYPE_UNIT;
+			} else {
+				*error = 6;
+			}
+		}
+		if(last_line->type == AST_VAR || last_line->type == AST_VAR || last_line == AST_CALL){
+			type = last_line->return_type;
+		}
+	}
+}
 
 
 
-
-void check_func_return(ast_node_t *node, int *error){
+void check_func_1(ast_node_t *node, int *error){
 
 	if (node == NULL || *error != 0)
 		return;
