@@ -262,6 +262,35 @@ void check_if(ast_node_t *node, tree_t *local_symtable, int *error) {
 	}
 }
 
+void check_while(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
+	if (node->data.condicionals.cond == NULL) {
+		*error = 99;
+		return;
+	}
+	sem_check_node(node->data.condicionals.cond, local_symtable, error);
+	if (*error != 0) {
+		return;
+	}
+	if (node->data.condicionals.cond->return_type != TYPE_BOOL) {
+		*error = 6;
+		return;
+	}
+
+	if (node->data.condicionals.body == NULL) {
+		*error = 99;
+		return;
+	} else {
+		sem_check_node(node->data.condicionals.body, local_symtable, error);
+	}
+	if (*error != 0) {
+		return;
+	}
+}
+
 void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL || *error != 0) {
 		return;
@@ -288,8 +317,7 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		break;
 
 	case AST_WHILE:
-		sem_check_node(node->data.condicionals.cond, local_symtable, error);
-		sem_check_node(node->data.condicionals.body, local_symtable, error);
+		check_while(node, local_symtable, error);
 		break;
 
 	case AST_FUNC_DEF:
