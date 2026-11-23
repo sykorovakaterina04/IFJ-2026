@@ -193,7 +193,38 @@ ast_node_t *find_node(ast_node_t *node, ast_type_t type, char *func_name, char *
 	return find_node(node->next, type, func_name, var_name);
 }
 
-void check_func(ast_node_t *node, int *error){
+bool branch_unit(ast_node_t *node){
+	if (node != NULL && node->type == AST_BLOCK){
+		node = node->data.block.first_line;
+	}
+
+	if(node == NULL){
+		return true;
+	}
+
+	while (node->next != NULL){
+		node = node->next;
+	}
+
+	switch (node->type)
+	{
+	case AST_IF:
+		return branch_unit(node->data.condicionals.body) && branch_unit(node->data.condicionals.else_body);
+		break;
+	case AST_ASSIGN:
+    case AST_VAR_DEF:
+    case AST_WHILE:
+        return true;
+
+	case AST_CALL:
+		return (node->return_type == TYPE_UNIT);
+	
+	default:
+		return false;
+	}
+}
+
+void check_func_return(ast_node_t *node, int *error){
 
 	if(node == NULL || *error != 0) return;
 
@@ -203,12 +234,31 @@ void check_func(ast_node_t *node, int *error){
 		is_recursive = true;
 	}
 
-	if (is_recursive && node->return_type == TYPE_ANY){
+	if ((is_recursive || find_node(node->data.func.body, AST_RETURN, NULL, NULL)) && node->return_type == TYPE_ANY){
 		*error = 6;
 		return;
 	}
 
-	
+	ast_node_t *first_line = node->data.func.body->data.block.first_line;
+	ast_node_t *last_line = first_line;
+
+	if(last_line == NULL){
+		node->return_type = TYPE_UNIT;
+	}
+
+	while (last_line->next != NULL){
+		last_line = last_line->next;
+	}
+
+	if(last_line->type == AST_IF){
+		bool is_unit = branch_unit(last_line);
+		if(is_unit == true){
+			node->return_type = TYPE_UNIT;
+		} else {
+			*error = 6;
+		}
+	}
+
 
 }
 
@@ -246,6 +296,7 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		break;
 
 	case AST_FUNC_DEF:
+		check_func_return(node, error);
 		sem_check_node(node->data.func.args, local_symtable, error);
 		sem_check_node(node->data.func.body, local_symtable, error);
 		break;
