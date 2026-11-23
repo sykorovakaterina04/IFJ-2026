@@ -8,10 +8,20 @@ bool is_numeric(data_type_t type) {
 	return (type == TYPE_INT || type == TYPE_DOUBLE);
 }
 
+
+
+
+
+
 bool is_relational_op(binop_type_t type) {
 	return (type == EQ || type == NEQ || type == LT || type == GT ||
 			type == LEQ || type == GEQ);
 }
+
+
+
+
+
 
 void convert_int_to_double(ast_node_t *operand) {
 	if (operand == NULL) {
@@ -24,6 +34,11 @@ void convert_int_to_double(ast_node_t *operand) {
 		operand->data.literal.conversion_type = TYPE_DOUBLE;
 	}
 }
+
+
+
+
+
 
 void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL || error == NULL || *error != 0) {
@@ -81,6 +96,11 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 	}
 }
 
+
+
+
+
+
 void check_var(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL || error == NULL || *error != 0) {
 		return;
@@ -95,6 +115,11 @@ void check_var(ast_node_t *node, tree_t *local_symtable, int *error) {
 		node->return_type = data->data_type;
 	}
 }
+
+
+
+
+
 
 ast_node_t *find_node(ast_node_t *node, ast_type_t type, char *func_name,
 					  char *var_name) {
@@ -209,6 +234,11 @@ ast_node_t *find_node(ast_node_t *node, ast_type_t type, char *func_name,
 	return find_node(node->next, type, func_name, var_name);
 }
 
+
+
+
+
+
 bool branch_unit(ast_node_t *node){
 	if (node != NULL && node->type == AST_BLOCK){
 		node = node->data.block.first_line;
@@ -222,8 +252,7 @@ bool branch_unit(ast_node_t *node){
 		node = node->next;
 	}
 
-	switch (node->type)
-	{
+	switch (node->type){
 	case AST_IF:
 		return branch_unit(node->data.condicionals.body) && branch_unit(node->data.condicionals.else_body);
 		break;
@@ -239,6 +268,11 @@ bool branch_unit(ast_node_t *node){
 		return false;
 	}
 }
+
+
+
+
+
 
 void check_func_return(ast_node_t *node, int *error){
 
@@ -258,6 +292,11 @@ void check_func_return(ast_node_t *node, int *error){
 		}
 	}
 }
+
+
+
+
+
 
 void check_if(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL || error == NULL || *error != 0) {
@@ -295,6 +334,11 @@ void check_if(ast_node_t *node, tree_t *local_symtable, int *error) {
 	}
 }
 
+
+
+
+
+
 void check_while(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL || error == NULL || *error != 0) {
 		return;
@@ -323,6 +367,11 @@ void check_while(ast_node_t *node, tree_t *local_symtable, int *error) {
 		return;
 	}
 }
+
+
+
+
+
 
 void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL || *error != 0) {
@@ -383,6 +432,11 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 	}
 	sem_check_node(node->next, local_symtable, error);
 }
+
+
+
+
+
 
 int sem_check(ast_tree_t *tree) {
 	int error = 0;
