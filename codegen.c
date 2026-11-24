@@ -90,9 +90,7 @@ void definuj_defvar(ast_node_t *node){
 
     //pokud nazazis na uzel ast_def_var zpracuj ho a vytiskni promennou
     if(node->type == AST_VAR_DEF){
-        printf("DEFVAR ");
-        print_var(node);
-        printf("\n");
+       printf("DEFVAR LF@%s\n", node->data.variable.name);
         //rekurzivni prochazeni pri kazdem pripade bloku kodu - vytahne vsechny DEFVAR na zacatek funkce
     } else if(node->type == AST_BLOCK){
         for(ast_node_t *line = node->data.block.first_line; line != NULL; line = line->next){
@@ -427,7 +425,7 @@ void ast_literal(ast_node_t *node){
  * 
  * @param node 
  */
-void ast_var_def(ast_node_t *node){
+void ast_var_def(void){
 
     //samotna funkce nesmi nic tisknout
     //DEFVAR ted tiskne pouze ast_func_def pomoci funkce definuj_defvar
@@ -818,7 +816,7 @@ void zpracuj_uzel(ast_node_t *node){
                     ast_binop(node);
                 break;
             case AST_VAR_DEF:
-                    ast_var_def(node);
+                    ast_var_def();
                 break;
             case AST_VAR:
                     ast_var(node);
