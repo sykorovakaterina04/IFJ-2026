@@ -475,10 +475,7 @@ void check_assign(ast_node_t *node, tree_t *local_symtable, int *error) {
 		if (var == NULL) {
 			*error = 3;
 			return;
-		} else if (var->type != VARIABLE) {
-			*error = 7;
-			return;
-		}
+		} 
 	}
 
 	data_type_t dest_type = dest->return_type;
