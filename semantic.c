@@ -241,8 +241,33 @@ bool branch_unit(ast_node_t *node) {
 	}
 }
 
+bool branch_return(ast_node_t *node, data_type_t expected){
+	if (node != NULL && node->type == AST_BLOCK){
+		node = node->data.block.first_line;
+	}
 
-void check_func_2(ast_node_t *node, int *error) {
+	if (node == NULL){
+		return false;
+	}
+
+	while (node->next != NULL){
+		node = node->next;
+	}
+
+	if(node->type == AST_RETURN){
+		if(node->data.node_return.var == NULL){
+			return false;
+		}
+		data_type_t type = node->data.node_return.var->return_type;
+		return (type == expected) || (expected == TYPE_DOUBLE && type == TYPE_INT);
+	}
+	if(node->type == AST_IF){
+		return branch_explicit_return(node->data.condicionals.body, expected) && branch_explicit_return(node->data.condicionals.else_body, expected);
+	}
+}
+
+
+void check_func_2(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node == NULL) return;
 
 	ast_node_t *first_line = node->data.func.body->data.block.first_line;
@@ -276,6 +301,17 @@ void check_func_2(ast_node_t *node, int *error) {
 		if (last_line->type == AST_VAR || last_line->type == AST_LITERAL ||
 			last_line->type == AST_BINOP || last_line->type == AST_CALL) {
 			type = last_line->return_type;
+		}
+
+		if(type == TYPE_ANY || type == TYPE_BOOL){
+			*error = 6;
+		}
+
+		node->return_type = type;
+
+		tdata_t *data = symtable_lookup(local_symtable, node->data.func.name);
+		if(data != NULL){
+			data->type = type;
 		}
 	}
 }
@@ -438,7 +474,7 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		break;
 
 	case AST_FUNC_DEF:
-		check_func_return(node, error);
+		check_func_1(node, error);
 		sem_check_node(node->data.func.args, local_symtable, error);
 		sem_check_node(node->data.func.body, local_symtable, error);
 		break;
