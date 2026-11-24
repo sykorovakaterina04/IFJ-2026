@@ -782,6 +782,7 @@ token_t automat(FILE *fptr) {
 				token.col = token_start_col;
 				return token;
 			}
+			break;
 		case KA_DOUBLE_DOT:
 			if (isdigit(c)) {
 				str_add_char(&buffer, c);
