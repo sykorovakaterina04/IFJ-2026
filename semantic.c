@@ -278,6 +278,7 @@ bool branch_return(ast_node_t *node, data_type_t expected){
 	if(node->type == AST_IF){
 		return branch_return(node->data.condicionals.body, expected) && branch_return(node->data.condicionals.else_body, expected);
 	}
+	return false;
 }
 
 
@@ -326,6 +327,37 @@ void check_func_2(ast_node_t *node, tree_t *local_symtable, int *error) {
 		tdata_t *data = symtable_lookup(local_symtable, node->data.func.name);
 		if(data != NULL){
 			data->type = type;
+		}
+	} else if (node->return_type != TYPE_UNIT){
+		if(last_line->type == AST_RETURN){
+			if(last_line->data.node_return.var == NULL){
+				*error = 6;
+				return;
+			}
+			data_type_t type = last_line->data.node_return.var->return_type;
+			if(type != node->return_type && !(node->return_type != TYPE_DOUBLE && type == TYPE_INT)) {
+				*error = 6;
+				return;
+			}
+		}
+
+		else if (last_line->type == AST_VAR || last_line->type == AST_LITERAL || last_line->type == AST_BINOP || last_line->type == AST_CALL){
+			if(last_line->return_type != node->return_type && !(node->return_type == TYPE_DOUBLE && last_line->return_type == TYPE_INT)){
+				*error = 6;
+				return;
+			}
+		}
+
+		else if (last_line->type == AST_IF){
+			if(!branch_return(last_line, node->return_type)){
+				*error = 6;
+				return;
+			}
+		}
+
+		else {
+			*error = 6;
+			return;
 		}
 	}
 }
