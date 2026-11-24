@@ -55,6 +55,9 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 			   node->data.binop.type == DIV) {
 		if (left_type == TYPE_INT && right_type == TYPE_INT) {
 			node->return_type = TYPE_INT;
+			if (node->data.binop.type == DIV) {
+				node->data.binop.type = IDIV;
+			}
 		} else if (is_numeric(left_type) && is_numeric(right_type)) {
 			node->return_type = TYPE_DOUBLE;
 			convert_int_to_double(node->data.binop.left);
@@ -70,6 +73,8 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 		}
 	} else if (is_relational_op(node->data.binop.type)) {
 		if (is_numeric(left_type) && is_numeric(right_type)) {
+			convert_int_to_double(node->data.binop.left);
+			convert_int_to_double(node->data.binop.right);
 			node->return_type = TYPE_BOOL;
 		} else if (left_type == TYPE_STRING && right_type == TYPE_STRING) {
 			node->return_type = TYPE_BOOL;
@@ -223,27 +228,27 @@ bool branch_unit(ast_node_t *node) {
 	}
 
 	switch (node->type) {
-		case AST_IF:
-			return branch_unit(node->data.condicionals.body) &&
-				   branch_unit(node->data.condicionals.else_body);
+	case AST_IF:
+		return branch_unit(node->data.condicionals.body) &&
+			   branch_unit(node->data.condicionals.else_body);
 
-		case AST_ASSIGN:
-		case AST_VAR_DEF:
-		case AST_WHILE:
-			return true;
+	case AST_ASSIGN:
+	case AST_VAR_DEF:
+	case AST_WHILE:
+		return true;
 
-		case AST_CALL:
-		case AST_LITERAL:
-			return (node->return_type == TYPE_UNIT);
+	case AST_CALL:
+	case AST_LITERAL:
+		return (node->return_type == TYPE_UNIT);
 
-		default:
-			return false;
+	default:
+		return false;
 	}
 }
 
-
 void check_func_2(ast_node_t *node, int *error) {
-	if (node == NULL) return;
+	if (node == NULL)
+		return;
 
 	ast_node_t *first_line = node->data.func.body->data.block.first_line;
 
@@ -280,15 +285,15 @@ void check_func_2(ast_node_t *node, int *error) {
 	}
 }
 
-
-
 void check_func_1(ast_node_t *node, int *error) {
 	if (node == NULL || *error != 0) {
 		return;
 	}
 
-	bool is_recursive = (find_node(node->data.func.body, AST_CALL, node->data.func.name, NULL) != NULL);
-	bool has_return = (find_node(node->data.func.body, AST_RETURN, NULL, NULL) != NULL);
+	bool is_recursive = (find_node(node->data.func.body, AST_CALL,
+								   node->data.func.name, NULL) != NULL);
+	bool has_return =
+		(find_node(node->data.func.body, AST_RETURN, NULL, NULL) != NULL);
 
 	if (node->return_type == TYPE_ANY && (is_recursive || has_return)) {
 		*error = 6;
@@ -420,7 +425,6 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		break;
 
 	case AST_BINOP:
-
 		check_binop(node, local_symtable, error);
 		break;
 
@@ -438,7 +442,7 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		break;
 
 	case AST_FUNC_DEF:
-		check_func_return(node, error);
+		check_func_1(node, error);
 		sem_check_node(node->data.func.args, local_symtable, error);
 		sem_check_node(node->data.func.body, local_symtable, error);
 		break;
