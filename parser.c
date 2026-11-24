@@ -1263,9 +1263,6 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack, ast_no
 
         
         return_type = TYPE_ANY;
-        if (fn != NULL) {
-            fn->data_type = TYPE_ANY;
-        }
     }
     
     
