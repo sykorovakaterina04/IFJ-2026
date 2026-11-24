@@ -92,12 +92,21 @@ void check_var(ast_node_t *node, tree_t *local_symtable, int *error) {
 	}
 
 	char *var_name = node->data.variable.name;
+	if (var_name == NULL) {
+		*error = 99;
+		return;
+	}
+
 	tdata_t *data = symtable_lookup(local_symtable, var_name);
-	if (data == NULL) {
+	if (data == NULL || data->type == FUNCTION) {
 		*error = 3;
-	} else {
-		node->data.variable.type = data->data_type;
-		node->return_type = data->data_type;
+		return;
+	}
+	node->data.variable.type = data->data_type;
+	node->return_type = data->data_type;
+
+	if (node->return_type == TYPE_ANY) {
+		*error = 6;
 	}
 }
 
