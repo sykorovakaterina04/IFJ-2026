@@ -335,6 +335,7 @@ int parse(ast_tree_t **out_ast) {
 
     }
     cleanup_parser(global_symtable,&indent_stack,false); /////nemazat global_symtable
+    ast->global_symtable = global_symtable; //nastaveni global symtable
     ast->root = head;
     *out_ast = ast;
     return 0; // 
@@ -1271,10 +1272,10 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack, ast_no
      
         if (!explicit_type) {
 
-        //DODELAT ZATIM JE UNIT MA SE TO ODVODIT Z POSLEDNIHO
-        return_type = TYPE_UNIT;
+        
+        return_type = TYPE_ANY;
         if (fn != NULL) {
-            fn->data_type = TYPE_UNIT;
+            fn->data_type = TYPE_ANY;
         }
     }
     
