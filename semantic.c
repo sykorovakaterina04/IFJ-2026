@@ -13,7 +13,23 @@ bool is_relational_op(binop_type_t type) {
 			type == LEQ || type == GEQ);
 }
 
+void convert_int_to_double(ast_node_t *operand) {
+	if (operand == NULL) {
+		return;
+	}
+	if (operand->type == AST_VAR && operand->data.variable.type == TYPE_INT) {
+		operand->data.variable.conversion_type = TYPE_DOUBLE;
+	} else if (operand->type == AST_LITERAL &&
+			   operand->data.literal.type == TYPE_INT) {
+		operand->data.literal.conversion_type = TYPE_DOUBLE;
+	}
+}
+
 void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
 	sem_check_node(node->data.binop.left, local_symtable, error);
 	sem_check_node(node->data.binop.right, local_symtable, error);
 	if (*error != 0) {
@@ -26,10 +42,10 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 	if (node->data.binop.type == ADD) {
 		if (left_type == TYPE_INT && right_type == TYPE_INT) {
 			node->return_type = TYPE_INT;
-		} else if ((left_type == TYPE_DOUBLE && right_type == TYPE_DOUBLE) ||
-				   (left_type == TYPE_DOUBLE && right_type == TYPE_INT) ||
-				   (left_type == TYPE_INT && right_type == TYPE_DOUBLE)) {
+		} else if (is_numeric(left_type) && is_numeric(right_type)) {
 			node->return_type = TYPE_DOUBLE;
+			convert_int_to_double(node->data.binop.left);
+			convert_int_to_double(node->data.binop.right);
 		} else if (left_type == TYPE_STRING && right_type == TYPE_STRING) {
 			node->return_type = TYPE_STRING;
 		} else {
@@ -39,10 +55,13 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 			   node->data.binop.type == DIV) {
 		if (left_type == TYPE_INT && right_type == TYPE_INT) {
 			node->return_type = TYPE_INT;
-		} else if ((left_type == TYPE_DOUBLE && right_type == TYPE_DOUBLE) ||
-				   (left_type == TYPE_DOUBLE && right_type == TYPE_INT) ||
-				   (left_type == TYPE_INT && right_type == TYPE_DOUBLE)) {
+			if (node->data.binop.type == DIV) {
+				node->data.binop.type = IDIV;
+			}
+		} else if (is_numeric(left_type) && is_numeric(right_type)) {
 			node->return_type = TYPE_DOUBLE;
+			convert_int_to_double(node->data.binop.left);
+			convert_int_to_double(node->data.binop.right);
 		} else {
 			*error = 6;
 		}
@@ -52,88 +71,132 @@ void check_binop(ast_node_t *node, tree_t *local_symtable, int *error) {
 		} else {
 			*error = 6;
 		}
-	}
-
-	// relacni operatory
-	if (is_relational_op(node->data.binop.type)) {
+	} else if (is_relational_op(node->data.binop.type)) {
 		if (is_numeric(left_type) && is_numeric(right_type)) {
+			convert_int_to_double(node->data.binop.left);
+			convert_int_to_double(node->data.binop.right);
 			node->return_type = TYPE_BOOL;
 		} else if (left_type == TYPE_STRING && right_type == TYPE_STRING) {
 			node->return_type = TYPE_BOOL;
 		} else {
 			*error = 6;
 		}
+	} else {
+		*error = 6;
 	}
 }
 
 void check_var(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
 	char *var_name = node->data.variable.name;
+	if (var_name == NULL) {
+		*error = 99;
+		return;
+	}
+
 	tdata_t *data = symtable_lookup(local_symtable, var_name);
-	if (data == NULL) {
+	if (data == NULL || data->type == FUNCTION) {
 		*error = 3;
-	} else {
-		node->data.variable.type = data->data_type;
+		return;
+	}
+	node->data.variable.type = data->data_type;
+	node->return_type = data->data_type;
+
+	if (node->return_type == TYPE_ANY) {
+		*error = 6;
 	}
 }
 
-ast_node_t *find_node_by_type(ast_node_t *node, ast_type_t type) {
+ast_node_t *find_node(ast_node_t *node, ast_type_t type, char *func_name,
+					  char *var_name) {
 
 	if (!node) {
 		return NULL;
 	}
 
-	if (node->type == type) {
-		return node;
+	if (type == AST_NO_TYPE || node->type == type) {
+		if (func_name != NULL) {
+			if ((node->type == AST_FUNC_DEF || node->type == AST_CALL) &&
+				node->data.func.name != NULL &&
+				strcmp(node->data.func.name, func_name) == 0) {
+				return node;
+			}
+		} else if (var_name != NULL) {
+			if ((node->type == AST_VAR_DEF || node->type == AST_VAR) &&
+				node->data.variable.name != NULL &&
+				strcmp(node->data.variable.name, var_name) == 0) {
+				return node;
+			}
+		} else if (type != AST_NO_TYPE) {
+			if (node->type == type) {
+				return node;
+			}
+		}
 	}
 
 	ast_node_t *target_node = NULL;
 
 	switch (node->type) {
 	case AST_ASSIGN:
-		target_node = find_node_by_type(node->data.assign.dest, type);
-		if (target_node != NULL)
-			return target_node;
-		target_node = find_node_by_type(node->data.assign.source, type);
-		break;
-
-	case AST_BINOP:
-		target_node = find_node_by_type(node->data.binop.left, type);
-		if (target_node != NULL)
-			return target_node;
-		target_node = find_node_by_type(node->data.binop.right, type);
-		break;
-
-	case AST_BLOCK:
-		target_node = find_node_by_type(node->data.block.first_line, type);
-		break;
-
-	case AST_IF:
-		target_node = find_node_by_type(node->data.condicionals.cond, type);
-		if (target_node != NULL)
-			return target_node;
-		target_node = find_node_by_type(node->data.condicionals.body, type);
+		target_node =
+			find_node(node->data.assign.dest, type, func_name, var_name);
 		if (target_node != NULL)
 			return target_node;
 		target_node =
-			find_node_by_type(node->data.condicionals.else_body, type);
+			find_node(node->data.assign.source, type, func_name, var_name);
+		break;
+
+	case AST_BINOP:
+		target_node =
+			find_node(node->data.binop.left, type, func_name, var_name);
+		if (target_node != NULL)
+			return target_node;
+		target_node =
+			find_node(node->data.binop.right, type, func_name, var_name);
+		break;
+
+	case AST_BLOCK:
+		target_node =
+			find_node(node->data.block.first_line, type, func_name, var_name);
+		break;
+
+	case AST_IF:
+		target_node =
+			find_node(node->data.condicionals.cond, type, func_name, var_name);
+		if (target_node != NULL)
+			return target_node;
+		target_node =
+			find_node(node->data.condicionals.body, type, func_name, var_name);
+		if (target_node != NULL)
+			return target_node;
+		target_node = find_node(node->data.condicionals.else_body, type,
+								func_name, var_name);
 		break;
 
 	case AST_WHILE:
-		target_node = find_node_by_type(node->data.condicionals.cond, type);
+		target_node =
+			find_node(node->data.condicionals.cond, type, func_name, var_name);
 		if (target_node != NULL)
 			return target_node;
-		target_node = find_node_by_type(node->data.condicionals.body, type);
+		target_node =
+			find_node(node->data.condicionals.body, type, func_name, var_name);
 		break;
 
 	case AST_FUNC_DEF:
-		target_node = find_node_by_type(node->data.func.args, type);
+		target_node =
+			find_node(node->data.func.args, type, func_name, var_name);
 		if (target_node != NULL)
 			return target_node;
-		target_node = find_node_by_type(node->data.func.body, type);
+		target_node =
+			find_node(node->data.func.body, type, func_name, var_name);
 		break;
 
 	case AST_CALL:
-		target_node = find_node_by_type(node->data.func.args, type);
+		target_node =
+			find_node(node->data.func.args, type, func_name, var_name);
 		break;
 
 	case AST_VAR_DEF:
@@ -146,7 +209,8 @@ ast_node_t *find_node_by_type(ast_node_t *node, ast_type_t type) {
 		break;
 
 	case AST_RETURN:
-		target_node = find_node_by_type(node->data.node_return.var, type);
+		target_node =
+			find_node(node->data.node_return.var, type, func_name, var_name);
 		break;
 
 	case AST_NO_TYPE:
@@ -156,7 +220,245 @@ ast_node_t *find_node_by_type(ast_node_t *node, ast_type_t type) {
 		return target_node;
 	}
 
-	return find_node_by_type(node->next, type);
+	return find_node(node->next, type, func_name, var_name);
+}
+
+bool branch_unit(ast_node_t *node) {
+	if (node != NULL && node->type == AST_BLOCK) {
+		node = node->data.block.first_line;
+	}
+
+	if (node == NULL) {
+		return true;
+	}
+
+	while (node->next != NULL) {
+		node = node->next;
+	}
+
+	switch (node->type) {
+	case AST_IF:
+		return branch_unit(node->data.condicionals.body) &&
+			   branch_unit(node->data.condicionals.else_body);
+
+	case AST_ASSIGN:
+	case AST_VAR_DEF:
+	case AST_WHILE:
+		return true;
+
+	case AST_CALL:
+	case AST_LITERAL:
+		return (node->return_type == TYPE_UNIT);
+
+	default:
+		return false;
+	}
+}
+
+bool branch_return(ast_node_t *node, data_type_t expected) {
+	if (node != NULL && node->type == AST_BLOCK) {
+		node = node->data.block.first_line;
+	}
+
+	if (node == NULL) {
+		return false;
+	}
+
+	while (node->next != NULL) {
+		node = node->next;
+	}
+
+	if (node->type == AST_RETURN) {
+		if (node->data.node_return.var == NULL) {
+			return false;
+		}
+		data_type_t type = node->data.node_return.var->return_type;
+		return (type == expected) ||
+			   (expected == TYPE_DOUBLE && type == TYPE_INT);
+	}
+	if (node->type == AST_IF) {
+		return branch_return(node->data.condicionals.body, expected) &&
+			   branch_return(node->data.condicionals.else_body, expected);
+	}
+}
+
+void check_func_2(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL)
+		return;
+
+	ast_node_t *first_line = node->data.func.body->data.block.first_line;
+
+	if (first_line == NULL) {
+		node->return_type = TYPE_UNIT;
+		return;
+	}
+
+	ast_node_t *last_line = first_line;
+	data_type_t type = TYPE_ANY;
+
+	while (last_line->next != NULL) {
+		last_line = last_line->next;
+	}
+
+	if (node->return_type == TYPE_ANY) {
+		if (last_line->type == AST_ASSIGN || last_line->type == AST_FUNC_DEF ||
+			last_line->type == AST_VAR_DEF || last_line->type == AST_WHILE) {
+			type = TYPE_UNIT;
+		}
+
+		if (last_line->type == AST_IF) {
+			if (branch_unit(last_line)) {
+				type = TYPE_UNIT;
+			} else {
+				*error = 6;
+			}
+		}
+
+		if (last_line->type == AST_VAR || last_line->type == AST_LITERAL ||
+			last_line->type == AST_BINOP || last_line->type == AST_CALL) {
+			type = last_line->return_type;
+		}
+
+		if (type == TYPE_ANY || type == TYPE_BOOL) {
+			*error = 6;
+		}
+
+		node->return_type = type;
+
+		tdata_t *data = symtable_lookup(local_symtable, node->data.func.name);
+		if (data != NULL) {
+			data->type = type;
+		}
+	}
+}
+
+void check_func_1(ast_node_t *node, int *error) {
+	if (node == NULL || *error != 0) {
+		return;
+	}
+
+	bool is_recursive = (find_node(node->data.func.body, AST_CALL,
+								   node->data.func.name, NULL) != NULL);
+	bool has_return =
+		(find_node(node->data.func.body, AST_RETURN, NULL, NULL) != NULL);
+
+	if (node->return_type == TYPE_ANY && (is_recursive || has_return)) {
+		*error = 6;
+		return;
+	}
+}
+
+void check_if(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
+	if (node->data.condicionals.cond == NULL) {
+		*error = 99;
+		return;
+	}
+	sem_check_node(node->data.condicionals.cond, local_symtable, error);
+	if (*error != 0) {
+		return;
+	}
+	if (node->data.condicionals.cond->return_type != TYPE_BOOL) {
+		*error = 6;
+		return;
+	}
+
+	if (node->data.condicionals.body == NULL) {
+		*error = 99;
+		return;
+	} else {
+		sem_check_node(node->data.condicionals.body, local_symtable, error);
+	}
+	if (*error != 0) {
+		return;
+	}
+
+	if (*error == 0) {
+		if (node->data.condicionals.else_body != NULL) {
+			sem_check_node(node->data.condicionals.else_body, local_symtable,
+						   error);
+		}
+	}
+}
+
+void check_while(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
+	if (node->data.condicionals.cond == NULL) {
+		*error = 99;
+		return;
+	}
+	sem_check_node(node->data.condicionals.cond, local_symtable, error);
+	if (*error != 0) {
+		return;
+	}
+	if (node->data.condicionals.cond->return_type != TYPE_BOOL) {
+		*error = 6;
+		return;
+	}
+
+	if (node->data.condicionals.body == NULL) {
+		*error = 99;
+		return;
+	} else {
+		sem_check_node(node->data.condicionals.body, local_symtable, error);
+	}
+	if (*error != 0) {
+		return;
+	}
+}
+
+void check_assign(ast_node_t *node, tree_t *local_symtable, int *error) {
+	if (node == NULL || error == NULL || *error != 0) {
+		return;
+	}
+
+	ast_node_t *source = node->data.assign.source;
+	ast_node_t *dest = node->data.assign.dest;
+	if (source == NULL || dest == NULL) {
+		*error = 99;
+		return;
+	}
+
+	sem_check_node(source, local_symtable, error);
+	if (*error != 0) {
+		return;
+	}
+	sem_check_node(dest, local_symtable, error);
+	if (*error != 0) {
+		return;
+	}
+
+	if (dest->type != AST_VAR) {
+		*error = 99;
+		return;
+	} else {
+		tdata_t *var =
+			symtable_lookup(local_symtable, dest->data.variable.name);
+		if (var == NULL) {
+			*error = 3;
+			return;
+		} else if (var->type != VARIABLE) {
+			*error = 7;
+			return;
+		}
+	}
+
+	data_type_t dest_type = dest->return_type;
+	data_type_t source_type = source->return_type;
+
+	if (dest_type == source_type || source_type == TYPE_ANY) {
+		return;
+	} else if (source_type == TYPE_INT && dest_type == TYPE_DOUBLE) {
+		convert_int_to_double(source);
+	} else {
+		*error = 6;
+	}
 }
 
 void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
@@ -166,33 +468,29 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 
 	switch (node->type) {
 	case AST_ASSIGN:
-		sem_check_node(node->data.assign.dest, local_symtable, error);
-		sem_check_node(node->data.assign.source, local_symtable, error);
+		check_assign(node, local_symtable, error);
 		break;
 
 	case AST_BINOP:
-
 		check_binop(node, local_symtable, error);
 		break;
 
-	case AST_BLOCK:
+	case AST_BLOCK: {
 		tree_t *block_symtable = node->data.block.symtable;
 		sem_check_node(node->data.block.first_line, block_symtable, error);
 		break;
+	}
 
 	case AST_IF:
-		sem_check_node(node->data.condicionals.cond, local_symtable, error);
-		sem_check_node(node->data.condicionals.body, local_symtable, error);
-		sem_check_node(node->data.condicionals.else_body, local_symtable,
-					   error);
+		check_if(node, local_symtable, error);
 		break;
 
 	case AST_WHILE:
-		sem_check_node(node->data.condicionals.cond, local_symtable, error);
-		sem_check_node(node->data.condicionals.body, local_symtable, error);
+		check_while(node, local_symtable, error);
 		break;
 
 	case AST_FUNC_DEF:
+		check_func_1(node, error);
 		sem_check_node(node->data.func.args, local_symtable, error);
 		sem_check_node(node->data.func.body, local_symtable, error);
 		break;
@@ -215,7 +513,7 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 	case AST_RETURN:
 		sem_check_node(node->data.node_return.var, local_symtable, error);
 		break;
-	
+
 	case AST_NO_TYPE:
 		break;
 	}

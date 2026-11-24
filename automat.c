@@ -37,6 +37,7 @@ typedef enum {
 	KA_INT,
 	KA_ZERO,
 	KA_INT_UNDERSCORE,
+	KA_DOT,
 	KA_DOUBLE_DOT,
 	KA_DOUBLE_DECIMAL,
 	KA_DOUBLE_UNDERSCORE,
@@ -311,11 +312,9 @@ token_t automat(FILE *fptr) {
 				return token;
 			}
 			if (c == '.') {
-				token.type = TOKEN_DOT;
-				token.str_val = NULL;
-				token.line = token_start_line;
-				token.col = token_start_col;
-				return token;
+				state = KA_DOT;
+				str_init(&buffer);
+				break;
 			}
 			if (c == '@') {
 				state = KA_AT_M;
@@ -496,14 +495,7 @@ token_t automat(FILE *fptr) {
 			}
 		case KA_LINE_COMMENT:
 			if (c == '\n') {
-				at_line_start = 1;
-				tab_seen = 0;
-				token.type = TOKEN_EOL;
-				token.str_val = NULL;
-				token.line = current_line -1;
-				token.col = prev_col;
-				return token;
-				
+				state = KA_START;
 			} else if (c == EOF) {
 				my_ungetc(c, fptr);
 				state = KA_START;
@@ -567,18 +559,12 @@ token_t automat(FILE *fptr) {
 			if (c == ' ' || c == '\t' || c == '\r') {
 				break;
 			} else if (c == '\n') {
-				at_line_start = 1;
-				tab_seen = 0;
-				token.type = TOKEN_EOL;
-				token.str_val = NULL;
-				token.line = current_line -1;
-				token.col = prev_col;
-				return token;
-				
-			} else if (c == EOF) {
-				my_ungetc(c, fptr);
 				state = KA_START;
 				break;
+			} else if (c == EOF) {
+				fprintf(stderr,
+						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
+				exit(1);
 			} else {
 				fprintf(stderr,
 						"Lexikalni chyba: za vice radkovym blokovym komentarem "
@@ -781,6 +767,21 @@ token_t automat(FILE *fptr) {
 			}
 			break;
 		// sekvence stavu pro desetinny literal
+		case KA_DOT:
+			if (isdigit(c)) {
+				str_add_char(&buffer, '0');
+				str_add_char(&buffer, '.');
+				str_add_char(&buffer, c);
+				state = KA_DOUBLE_DECIMAL;
+			} else {
+				my_ungetc(c, fptr);
+				str_free(&buffer);
+				token.type = TOKEN_DOT;
+				token.str_val = NULL;
+				token.line = token_start_line;
+				token.col = token_start_col;
+				return token;
+			}
 		case KA_DOUBLE_DOT:
 			if (isdigit(c)) {
 				str_add_char(&buffer, c);
