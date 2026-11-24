@@ -255,35 +255,37 @@ bool branch_unit(ast_node_t *node) {
 	}
 }
 
-bool branch_return(ast_node_t *node, data_type_t expected){
-	if (node != NULL && node->type == AST_BLOCK){
+bool branch_return(ast_node_t *node, data_type_t expected) {
+	if (node != NULL && node->type == AST_BLOCK) {
 		node = node->data.block.first_line;
 	}
 
-	if (node == NULL){
+	if (node == NULL) {
 		return false;
 	}
 
-	while (node->next != NULL){
+	while (node->next != NULL) {
 		node = node->next;
 	}
 
-	if(node->type == AST_RETURN){
-		if(node->data.node_return.var == NULL){
+	if (node->type == AST_RETURN) {
+		if (node->data.node_return.var == NULL) {
 			return false;
 		}
 		data_type_t type = node->data.node_return.var->return_type;
-		return (type == expected) || (expected == TYPE_DOUBLE && type == TYPE_INT);
+		return (type == expected) ||
+			   (expected == TYPE_DOUBLE && type == TYPE_INT);
 	}
-	if(node->type == AST_IF){
-		return branch_return(node->data.condicionals.body, expected) && branch_return(node->data.condicionals.else_body, expected);
+	if (node->type == AST_IF) {
+		return branch_return(node->data.condicionals.body, expected) &&
+			   branch_return(node->data.condicionals.else_body, expected);
 	}
 	return false;
 }
 
-
 void check_func_2(ast_node_t *node, tree_t *local_symtable, int *error) {
-	if (node == NULL) return;
+	if (node == NULL)
+		return;
 
 	ast_node_t *first_line = node->data.func.body->data.block.first_line;
 
@@ -318,14 +320,14 @@ void check_func_2(ast_node_t *node, tree_t *local_symtable, int *error) {
 			type = last_line->return_type;
 		}
 
-		if(type == TYPE_ANY || type == TYPE_BOOL){
+		if (type == TYPE_ANY || type == TYPE_BOOL) {
 			*error = 6;
 		}
 
 		node->return_type = type;
 
 		tdata_t *data = symtable_lookup(local_symtable, node->data.func.name);
-		if(data != NULL){
+		if (data != NULL) {
 			data->type = type;
 		}
 	} else if (node->return_type != TYPE_UNIT){
@@ -505,10 +507,11 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		check_binop(node, local_symtable, error);
 		break;
 
-	case AST_BLOCK:
+	case AST_BLOCK: {
 		tree_t *block_symtable = node->data.block.symtable;
 		sem_check_node(node->data.block.first_line, block_symtable, error);
 		break;
+	}
 
 	case AST_IF:
 		check_if(node, local_symtable, error);
