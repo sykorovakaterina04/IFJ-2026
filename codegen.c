@@ -62,13 +62,13 @@ void print_var(ast_node_t *node){
     //tisknuti promenne podle zadaneho ramce
     switch (node->data.variable.frame){
         case LOCAL:
-            printf("LF@%s", node->data.variable.name);
+            printf("LF@%s$%d", node->data.variable.name, node->data.variable.id);
             break;
         case GLOBAL:
-            printf("GF@%s", node->data.variable.name);
+            printf("GF@%s$%d", node->data.variable.name, node->data.variable.id);
             break;
         case TMP:
-            printf("TF@%s", node->data.variable.name);
+            printf("TF@%s$%d", node->data.variable.name, node->data.variable.id);
             break;
         default:
             break;
@@ -90,7 +90,7 @@ void definuj_defvar(ast_node_t *node){
 
     //pokud nazazis na uzel ast_def_var zpracuj ho a vytiskni promennou
     if(node->type == AST_VAR_DEF){
-       printf("DEFVAR LF@%s\n", node->data.variable.name);
+       printf("DEFVAR LF@%s$%d\n", node->data.variable.name, node->data.variable.id);
         //rekurzivni prochazeni pri kazdem pripade bloku kodu - vytahne vsechny DEFVAR na zacatek funkce
     } else if(node->type == AST_BLOCK){
         for(ast_node_t *line = node->data.block.first_line; line != NULL; line = line->next){
@@ -783,8 +783,8 @@ void ast_func_def(ast_node_t *node){
     //definice promennych a vytahnuti parametru ze zasobniku
     //parametry se vytahuji v opacnem poradi nez byly na zasobnik dany
     for (int i = args_cnt - 1; i >= 0; i--) {
-            printf("DEFVAR LF@%s\n", params[i]->data.variable.name);
-            printf("POPS LF@%s\n", params[i]->data.variable.name);
+            printf("DEFVAR LF@%s$%d\n", params[i]->data.variable.name, node->data.variable.id);
+            printf("POPS LF@%s$%d\n", params[i]->data.variable.name, node->data.variable.id);
     }
     }
     //projdi zbytek funkce a hned vypis definice promennych

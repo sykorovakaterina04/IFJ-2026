@@ -56,6 +56,7 @@ struct ast_node{
             char *name; // nazev funkce
             ast_node_t *args; //argumenty
             ast_node_t *body; //block tela funkce
+            bool is_checked; // jestli probehla uz na funkci semanticka kontrola
         }func;
 
         struct {
@@ -71,6 +72,7 @@ struct ast_node{
             data_type_t type; // datovy typ promenne
             data_type_t conversion_type; // typ, na ktery se ma promenna prevest
             frame_t frame; // ramec, ve kterem se promenna nachazi
+            int id; // cislo pro shadowing
         }variable;
 
         struct { 
