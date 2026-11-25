@@ -1,3 +1,10 @@
+/**
+ * @file parser.h
+ * @brief Rozhraní syntaktického analyzátoru (rekurzivní sestup) pro překladač jazyka IFJ26.
+ *
+ * @author Daniel Doubrava (xdoubrd00)
+ */
+
 #ifndef PARSER_H
 #define PARSER_H
 

@@ -1,3 +1,10 @@
+/**
+ * @file parser.c
+ * @brief Implementace syntaktického analyzátoru (rekurzivní sestup) a stavby AST pro jazyk IFJ26.
+ *
+ * @author Daniel Doubrava (xdoubrd00)
+ */
+
 #include "parser.h"
 #include "automat.h"
 #include "expr_parser.h"

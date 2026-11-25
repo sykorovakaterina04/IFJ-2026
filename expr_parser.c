@@ -1,3 +1,10 @@
+/**
+ * @file expr_parser.c
+ * @brief Implementace precedenční syntaktické analýzy výrazů (PSA) a tvorby AST podstromů.
+ *
+ *  @author Daniel Doubrava (xdoubrd00)
+ */
+
 #include "expr_parser.h"
 #include "parser.h"
 #include <stdlib.h>
