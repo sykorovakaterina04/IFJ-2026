@@ -689,15 +689,17 @@ void ast_block(ast_node_t *node){
 
                 //pokud jde o posledni prikaz
             if(is_last){
-                if(curr_func->return_type == TYPE_UNIT){
+                if((curr_func->return_type == TYPE_UNIT) ||
+                    (!is_expr && curr->type != AST_RETURN)){
                     if(is_expr){ //funkce s navratovym typem unit
                         printf("POPS GF@$tmp1\n");
                     }
                 printf("PUSHS string@()\n");
                 } else {
                     //konverze 
-                    if ((curr->type == AST_CALL || curr->type == AST_BINOP)
-                     && curr->return_type == TYPE_INT && curr_func->return_type == TYPE_DOUBLE) {
+                    if ((curr->type == AST_CALL || curr->type == AST_BINOP) && 
+                        curr->return_type == TYPE_INT && 
+                        curr_func->return_type == TYPE_DOUBLE) {
                         printf("INT2FLOATS\n");
                     }
                 }
