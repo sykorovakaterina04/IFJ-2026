@@ -783,8 +783,8 @@ void ast_func_def(ast_node_t *node){
     //definice promennych a vytahnuti parametru ze zasobniku
     //parametry se vytahuji v opacnem poradi nez byly na zasobnik dany
     for (int i = args_cnt - 1; i >= 0; i--) {
-            printf("DEFVAR LF@%s$%d\n", params[i]->data.variable.name, node->data.variable.id);
-            printf("POPS LF@%s$%d\n", params[i]->data.variable.name, node->data.variable.id);
+            printf("DEFVAR LF@%s$%d\n", params[i]->data.variable.name, params[i]->data.variable.id);
+            printf("POPS LF@%s$%d\n", params[i]->data.variable.name, params[i]->data.variable.id);
     }
     }
     //projdi zbytek funkce a hned vypis definice promennych
