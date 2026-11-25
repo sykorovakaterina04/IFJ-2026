@@ -25,6 +25,7 @@ typedef struct tdata {
   int line;
   int param_count;
   data_type_t *param_types;
+  int id; // unikatni cislo promennych u funkci je to vzdy 0, pro shadowing
 } tdata_t;
 
 typedef struct tnode {
