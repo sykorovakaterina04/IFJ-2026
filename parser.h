@@ -13,6 +13,9 @@
 #include "symtable.h"
 #include <stdbool.h>
 
+
+// pro kontrolu odsazeni v zavorkach
+extern int parser_line_indent;
 // zasobnik urovni odsazeni
 typedef struct {
   int *items;
