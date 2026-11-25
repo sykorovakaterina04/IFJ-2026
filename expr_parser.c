@@ -234,6 +234,9 @@ static int make_operand(psa_item_t *it, tree_t *local_symtable) {
     it->type = sym->data_type;
     it->node =
         ast_create_var(current_token.str_val, sym->data_type, LOCAL, line);
+    if (it->node != NULL) {
+      it->node->data.variable.id = sym->id;
+    }
     break;
   }
   default:
@@ -258,11 +261,9 @@ static int clean(psa_stack_t *stack, int err_code) {
   return err_code;
 }
 
-int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable,
-                        data_type_t *out_type, ast_node_t **out_node,
-                        bool is_condition, bool in_parens) {
-  (void)global_symtable; // tmp
-  (void)is_condition;
+int parse_expression_ex(tree_t *local_symtable, data_type_t *out_type,
+                        ast_node_t **out_node, bool in_parens) {
+
   psa_stack_t stack = {NULL, 0, 0};
   psa_item_t dollar = {0};
   dollar.sym = P_END;
@@ -401,10 +402,4 @@ int parse_expression_ex(tree_t *global_symtable, tree_t *local_symtable,
 
   stack.items[1].node = NULL;
   return clean(&stack, 0);
-}
-
-int parse_expression(tree_t *global_symtable, tree_t *local_symtable,
-                     data_type_t *out_type, bool is_condition) {
-  return parse_expression_ex(global_symtable, local_symtable, out_type, NULL,
-                             is_condition, false);
 }

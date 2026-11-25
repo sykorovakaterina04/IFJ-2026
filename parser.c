@@ -24,6 +24,7 @@ static pending_call_list_t pending_calls = {NULL, 0, 0};
 
 // pomocne pro ast
 static ast_node_t *current_func = NULL;
+static int next_var_id = 0; // shadowing
 
 static void pending_calls_free(void);
 static int verify_pending_calls(tree_t *global_symtable);
@@ -42,7 +43,8 @@ static int parse_while(tree_t *global_symtable, tree_t *local_symtable,
                        data_type_t func_return_type, ast_node_t **out);
 static int parse_return(tree_t *global_symtable, tree_t *local_symtable,
                         data_type_t func_return_type, ast_node_t **out);
-
+static int insert_var(tree_t *table, const char *name, node_type_t type,
+                      data_type_t dt, int line, int *out_id);
 char *main_func_name = NULL;
 
 static char *dup_str(const char *s) {
@@ -246,6 +248,7 @@ int parse(ast_tree_t **out_ast) {
   pending_calls.items = NULL; // reset
   pending_calls.count = 0;
   pending_calls.capacity = 0;
+  next_var_id = 0;
 
   tree_t *global_symtable = symtable_init(NULL); // globalni tabulka pro funkce
   if (global_symtable == NULL) {
@@ -367,8 +370,6 @@ static int parse_type(data_type_t *out_type) {
     *out_type = TYPE_UNIT;
     next();
     return 0;
-  case KEYWORD_BOOLEAN:
-    return 2; // ROZSIRENI AZ
   case TOKEN_IDENTIFIER:
     return 3; // neznamu typ
 
@@ -406,20 +407,17 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
       return 4;
     }
 
-    // kopie nazvu paramteru
-    char *param_name = malloc(strlen(current_token.str_val) + 1);
+    // kopie nazvu parametru
+    char *param_name = dup_str(current_token.str_val);
     if (param_name == NULL) {
       free(*out_param_types);
       *out_param_types = NULL;
       return 99;
     }
 
-    strcpy(param_name, current_token.str_val);
     int param_line = current_token.line;
     next(); // za jmeno
-    while (current_token.type == TOKEN_EOL) {
-      next();
-    }
+    skip_eol();
     if (current_token.type != TOKEN_COLON) {
       free(*out_param_types);
       free(param_name);
@@ -428,9 +426,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
     }
 
     next(); // typ parametru
-    while (current_token.type == TOKEN_EOL) {
-      next();
-    }
+    skip_eol();
     data_type_t param_type;
 
     int type_res = parse_type(&param_type);
@@ -438,12 +434,12 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
       free(*out_param_types);
       free(param_name);
       *out_param_types = NULL;
-      return type_res; // v type res je ta chyba ktera se stala
+      return type_res;
     }
 
-    int ins_res = symtable_insert(local_symtable, param_name, PARAM, param_type,
-                                  param_line);
-
+    int var_id = 0;
+    int ins_res = insert_var(local_symtable, param_name, PARAM, param_type,
+                             param_line, &var_id);
     if (ins_res != 0) {
       free(*out_param_types);
       free(param_name);
@@ -451,15 +447,15 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
       return 99;
     }
 
-    if (ins_res == 0) {
-      ast_node_t *pnode =
-          ast_create_var_def(param_name, param_type, param_line);
-      if (pnode == NULL) {
-        free(param_name);
-        return 99;
-      }
-      list_append(out_args, &args_tail, pnode);
+    ast_node_t *pnode = ast_create_var_def(param_name, param_type, param_line);
+    if (pnode == NULL) {
+      free(*out_param_types);
+      free(param_name);
+      *out_param_types = NULL;
+      return 99;
     }
+    pnode->data.variable.id = var_id;
+    list_append(out_args, &args_tail, pnode);
 
     free(param_name);
 
@@ -474,9 +470,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
     (*out_param_types)[*out_param_count] = param_type;
     (*out_param_count)++;
 
-    while (current_token.type == TOKEN_EOL) {
-      next();
-    }
+    skip_eol();
 
     // token , nebo )
     if (current_token.type == TOKEN_COMMA) {
@@ -487,7 +481,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
         next();
       }
 
-      // carka muze byt jen po odradkovani
+      // carka muze byt jen pred ) po odradkovani
       if (current_token.type == TOKEN_RPAREN) {
         if (!eol) {
           free(*out_param_types);
@@ -497,7 +491,6 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
         break;
       }
     } else {
-      skip_eol();
       if (current_token.type == TOKEN_RPAREN) {
         break;
       }
@@ -547,8 +540,7 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable,
 
     } else {
 
-      res = parse_expression_ex(global_symtable, local_symtable, &tmp, out_node,
-                                false, false);
+      parse_expression_ex(local_symtable, &tmp, out_node, false);
     }
     return finish_simple(res, out_node);
   }
@@ -563,8 +555,7 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable,
                                       func_return_type, out_node),
                          out_node);
   default:
-    return finish_simple(parse_expression_ex(global_symtable, local_symtable,
-                                             &tmp, out_node, false, false),
+    return finish_simple(parse_expression_ex(local_symtable, &tmp, out_node, false),
                          out_node);
   }
 }
@@ -674,8 +665,7 @@ static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable,
     while (true) {
       data_type_t arg_type;
       ast_node_t *arg = NULL;
-      int res = parse_expression_ex(global_symtable, local_symtable, &arg_type,
-                                    &arg, false, true);
+      int res = parse_expression_ex(local_symtable, &arg_type, &arg, true);
       if (res != 0) {
         free(func_name);
         free(arg_types);
@@ -782,11 +772,10 @@ static int parse_rs(tree_t *global_symtable, tree_t *local_symtable,
     return parse_function_call(global_symtable, local_symtable, out_type,
                                out_node);
   }
-  return parse_expression_ex(global_symtable, local_symtable, out_type,
-                             out_node, false, false);
+  return parse_expression_ex(local_symtable, out_type, out_node, false);
 }
 
-// deklareace val/var
+// deklarace val/var
 static int parse_val_decl(tree_t *global_symtable, tree_t *local_symtable,
                           ast_node_t **out_node) {
   bool is_const = (current_token.type == KEYWORD_VAL);
@@ -797,7 +786,7 @@ static int parse_val_decl(tree_t *global_symtable, tree_t *local_symtable,
     return 2;
   }
 
-  // jen lokalni uvnitr to muzu prejmenovat atd
+  // jen lokalni, uvnitr podbloku to muzu prekryt
   if (symtable_lookup_local(local_symtable, current_token.str_val) != NULL) {
     return 4;
   }
@@ -832,6 +821,7 @@ static int parse_val_decl(tree_t *global_symtable, tree_t *local_symtable,
 
   next(); // za =
 
+  // prava strana se parsuje PRED vlozenim promenne, takze "val x = x + 1" v podbloku pouzije vnejsi x
   data_type_t rs_type;
   ast_node_t *rs = NULL;
   int rs_res = parse_rs(global_symtable, local_symtable, &rs_type, &rs);
@@ -853,12 +843,11 @@ static int parse_val_decl(tree_t *global_symtable, tree_t *local_symtable,
     final_type = rs_type;
   }
 
-  int ins_res =
-      symtable_insert(local_symtable, var_name, is_const ? KONSTANT : VARIABLE,
-                      final_type, var_line);
-
+  int var_id = 0;
+  int ins_res = insert_var(local_symtable, var_name,
+                           is_const ? KONSTANT : VARIABLE, final_type,
+                           var_line, &var_id);
   if (ins_res != 0) {
-
     free(var_name);
     ast_destroy_node(rs);
     return 99;
@@ -876,6 +865,9 @@ static int parse_val_decl(tree_t *global_symtable, tree_t *local_symtable,
       ast_destroy_node(rs);
     return 99;
   }
+
+  def->data.variable.id = var_id;
+  dst->data.variable.id = var_id;
 
   def->next = asg;
   *out_node = def;
@@ -901,6 +893,7 @@ static int parse_assignment(tree_t *global_symtable, tree_t *local_symtable,
   if (dst == NULL) {
     return 99;
   }
+  dst->data.variable.id = var_sym->id;
   next(); // na =
 
   if (current_token.type != TOKEN_ASSIGN) {
@@ -946,8 +939,7 @@ static int parse_if(tree_t *global_symtable, tree_t *local_symtable,
 
   next(); // za if
 
-  int res = parse_expression_ex(global_symtable, local_symtable, &cond_type,
-                                &cond, true, false);
+  int res = parse_expression_ex(local_symtable, &cond_type, &cond, false);
   if (res != 0) {
     return res;
   }
@@ -1029,8 +1021,7 @@ static int parse_while(tree_t *global_symtable, tree_t *local_symtable,
   data_type_t cond_type;
 
   next(); // za while
-  int res = parse_expression_ex(global_symtable, local_symtable, &cond_type,
-                                &cond, true, false);
+  int res = parse_expression_ex(local_symtable, &cond_type, &cond, false);
   if (res != 0) {
     return res;
   }
@@ -1544,5 +1535,19 @@ int register_functions(tree_t *global_symtable) {
   if (control != 0) {
     return 99;
   }
+  return 0;
+}
+
+static int insert_var(tree_t *table, const char *name, node_type_t type,
+                      data_type_t dt, int line, int *out_id) {
+  if (symtable_insert(table, name, type, dt, line) != 0) {
+    return 99;
+  }
+  tdata_t *d = symtable_lookup_local(table, name);
+  if (d == NULL) {
+    return 99;
+  }
+  d->id = ++next_var_id;
+  *out_id = d->id;
   return 0;
 }
