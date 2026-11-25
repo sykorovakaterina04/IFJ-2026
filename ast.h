@@ -56,6 +56,7 @@ struct ast_node{
             char *name; // nazev funkce
             ast_node_t *args; //argumenty
             ast_node_t *body; //block tela funkce
+            bool is_checked; // jestli probehla uz na funkci semanticka kontrola
         }func;
 
         struct {
