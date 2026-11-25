@@ -32,3 +32,6 @@ $(OBJ_DIR):
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
+
+format:
+	clang-format -i --style=LLVM *.c *.h
