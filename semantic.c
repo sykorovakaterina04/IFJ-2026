@@ -475,10 +475,7 @@ void check_assign(ast_node_t *node, tree_t *local_symtable, int *error) {
 		if (var == NULL) {
 			*error = 3;
 			return;
-		} else if (var->type != VARIABLE) {
-			*error = 7;
-			return;
-		}
+		} 
 	}
 
 	data_type_t dest_type = dest->return_type;
@@ -525,7 +522,6 @@ void sem_check_node(ast_node_t *node, tree_t *local_symtable, int *error) {
 		check_func_1(node, error);
 		sem_check_node(node->data.func.args, local_symtable, error);
 		sem_check_node(node->data.func.body, local_symtable, error);
-		check_func_2(node, local_symtable, error);
 		break;
 
 	case AST_CALL:
