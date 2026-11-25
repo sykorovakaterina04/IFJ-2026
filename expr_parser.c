@@ -234,6 +234,9 @@ static int make_operand(psa_item_t *it, tree_t *local_symtable) {
     it->type = TYPE_UNIT;
     break;
   case TOKEN_IDENTIFIER: {
+    if (strcmp(current_token.str_val, "_") == 0) {
+      return 2; // samotne podtrzitko neni identifikator
+    }
     tdata_t *sym = symtable_lookup(local_symtable, current_token.str_val);
     if (sym == NULL || sym->type == FUNCTION) {
       return 3;
@@ -289,6 +292,11 @@ int parse_expression_ex(tree_t *local_symtable, data_type_t *out_type,
     // EOL muze byt uvnitr zavorek nebo hned za operatorem
     if (current_token.type == TOKEN_EOL && (in_parens || depth > 0)) {
       next();
+      // pokracovani musi byt odsazeno vic nez zacatek  radku
+      if (current_token.type != TOKEN_EOL && current_token.type != TOKEN_EOF &&
+          current_token.col <= parser_line_indent) {
+        return clean(&stack, 2);
+      }
       continue;
     }
 
