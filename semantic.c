@@ -525,6 +525,38 @@ void check_call(ast_tree_t *tree, ast_node_t *node, tree_t *local_symtable,
 		return;
 	}
 
+	// kontrola existence funkce
+	tdata_t *func_sym = symtable_lookup(local_symtable, func_name);
+	if (func_sym == NULL || func_sym->type != FUNCTION) {
+		*error = 3;
+		return;
+	}
+
+	ast_node_t *func_def = find_node(tree->root, AST_FUNC_DEF, func_name, NULL);
+	if (func_def != NULL && func_def->data.func.is_checked == false) {
+		func_def->data.func.is_checked = true;
+		check_func_1(func_def, error);
+		if (*error != 0) {
+			return;
+		}
+		if (func_def->data.func.body != NULL &&
+			func_def->data.func.body->data.block.symtable != NULL) {
+			tree_t *func_symtable =
+				func_def->data.func.body->data.block.symtable;
+			sem_check_node(tree, func_def->data.func.args, func_symtable,
+						   error);
+			sem_check_node(tree, func_def->data.func.body, func_symtable,
+						   error);
+			check_func_2(func_def, func_symtable, error);
+		} else {
+			*error = 99;
+			return;
+		}
+		if (*error != 0) {
+			return;
+		}
+	}
+
 	// prochazim argumenty
 	ast_node_t *arg = node->data.func.args;
 	int arg_count = 0;
@@ -537,13 +569,6 @@ void check_call(ast_tree_t *tree, ast_node_t *node, tree_t *local_symtable,
 		arg = arg->next;
 	}
 
-	// kontrola existence funkce
-	tdata_t *func_sym = symtable_lookup(local_symtable, func_name);
-	if (func_sym == NULL || func_sym->type != FUNCTION) {
-		*error = 3;
-		return;
-	}
-
 	// kontrola poctu argumentu
 	if (arg_count != func_sym->param_count) {
 		*error = 5;
@@ -551,6 +576,7 @@ void check_call(ast_tree_t *tree, ast_node_t *node, tree_t *local_symtable,
 	}
 
 	// kontrola typu a konverze
+	arg = node->data.func.args;
 	for (int i = 0; i < arg_count && arg != NULL; i++) {
 		data_type_t expected = func_sym->param_types[i];
 		data_type_t actual = arg->return_type;
@@ -646,10 +672,12 @@ void sem_check_node(ast_tree_t *tree, ast_node_t *node, tree_t *local_symtable,
 		break;
 
 	case AST_FUNC_DEF:
-		check_func_1(node, error);
-		sem_check_node(tree, node->data.func.args, local_symtable, error);
-		sem_check_node(tree, node->data.func.body, local_symtable, error);
-		check_func_2(node, local_symtable, error);
+		if (node->data.func.is_checked == false) {
+			check_func_1(node, error);
+			sem_check_node(tree, node->data.func.args, local_symtable, error);
+			sem_check_node(tree, node->data.func.body, local_symtable, error);
+			check_func_2(node, local_symtable, error);
+		}
 		break;
 
 	case AST_CALL:
