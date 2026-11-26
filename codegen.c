@@ -16,7 +16,7 @@ static ast_node_t *curr_func = NULL;
 /**
  * @brief pomocna funkce pro tisknuti literalu
  * 
- * @param node 
+ * @param node predany uzel
  */
 void print_literal(ast_node_t *node){
     switch (node->data.literal.type){
