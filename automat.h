@@ -78,6 +78,7 @@ typedef struct {
 	token_type_t type;
 	int line;
 	int col;
+	int indent;
 	union {
 		long long int_val;
 		double double_val;
@@ -86,11 +87,12 @@ typedef struct {
 } token_t;
 
 /**
- * @brief	Hlavni funkce konecneho automatu pro lexikalni analyzu, ktera
- * nactene znaky ze vstupniho souboru sklada do tokenu
+ * @brief	Hlavni obalovaci funkce lexikalniho analyzatoru, ktera
+ * nacte token pomoci konecneho automatu a doplni k nemu informaci o odsazeni
+ * radku
  *
- * @param fptr		Ukazatel na vstupni soubor
- * @return token_t	Vraci strukturu nacteneho tokenu
+ * @param fptr		ukazatel na vstupni soubor
+ * @return token_t	vraci strukturu nacteneho tokenu
  */
 token_t automat(FILE *fptr);
 
