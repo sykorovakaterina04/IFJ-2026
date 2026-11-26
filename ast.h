@@ -1,3 +1,13 @@
+/**
+ * @file ast.h
+ * @author Daniel Burda (xburdad00)
+ * @brief projekt IFJ a IAL 2026
+ * @date 2026-11-27
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #ifndef AST_H
 #define AST_H
 
