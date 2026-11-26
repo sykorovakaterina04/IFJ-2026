@@ -3,7 +3,6 @@
  * @file codegen.c
  * @author Katerina Sykorova (xsykork00)
  * @brief projekt IFJ a IAL 2026
- * @version 0.1
  * @date 2026-11-19
  * 
  */
