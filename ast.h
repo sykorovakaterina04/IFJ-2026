@@ -72,6 +72,7 @@ struct ast_node{
             data_type_t type; // datovy typ promenne
             data_type_t conversion_type; // typ, na ktery se ma promenna prevest
             frame_t frame; // ramec, ve kterem se promenna nachazi
+            int id; // id pro shadowing
         }variable;
 
         struct { 

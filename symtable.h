@@ -18,6 +18,7 @@ typedef struct tdata{
     int line; // cislo radku, na kterem se nachazi
     int param_count; // pocet parametru u funkce
     data_type_t *param_types; // datove typy parametru funkce
+    int id; // id pro shadowing
 }tdata_t;
 
 typedef struct tnode{
