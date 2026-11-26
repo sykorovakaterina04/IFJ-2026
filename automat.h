@@ -111,7 +111,7 @@ token_t automat(FILE *fptr);
  * @param s		retezec, pro ktery ma byt pamet alokovana
  * @return int	1 v pripade uspechu, 0 v pripade neuspechu
  */
-int str_init(string_t *s);
+void str_init(string_t *s);
 
 /**
  * @brief	Funkce pro pridani znaku do alokovaneho retezce
@@ -120,7 +120,7 @@ int str_init(string_t *s);
  * @param c		znak, ktery ma byt pridan do retezce
  * @return int	1 v pripade uspechu, 0 v pripade neuspechu
  */
-int str_add_char(string_t *s, char c);
+void str_add_char(string_t *s, char c);
 
 /**
  * @brief	Funkce pro uvolneni alokovane pameti retezce
