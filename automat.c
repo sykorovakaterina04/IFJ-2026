@@ -541,6 +541,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			} else if (c == '\n') {
 				comment_has_nl++;
+				state = KA_BLOCK_COMMENT;
 			} else {
 				state = KA_BLOCK_COMMENT;
 			}
@@ -557,6 +558,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			} else if (c == '\n') {
 				comment_has_nl++;
+				state = KA_BLOCK_COMMENT;
 			} else {
 				state = KA_BLOCK_COMMENT;
 			}
@@ -573,9 +575,8 @@ token_t automat(FILE *fptr) {
 				token.col = prev_col;
 				return token;
 			} else if (c == EOF) {
-				fprintf(stderr,
-						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
-				exit(1);
+				my_ungetc(c, fptr);
+				state = KA_START;
 			} else {
 				fprintf(stderr,
 						"Lexikalni chyba: za vice radkovym blokovym komentarem "
