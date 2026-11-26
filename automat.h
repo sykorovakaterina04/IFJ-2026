@@ -58,16 +58,6 @@ typedef enum {
 	KEYWORD_VAR,
 	KEYWORD_WHILE,
 
-	// klicova slova pro rozsireni
-	KEYWORD_BOOLEAN,
-	KEYWORD_CASE,
-	KEYWORD_CLASS,
-	KEYWORD_EXTENSION,
-	KEYWORD_FOR,
-	KEYWORD_LIST,
-	KEYWORD_MATCH,
-	KEYWORD_TYPE,
-
 } token_type_t;
 
 /**
@@ -109,7 +99,6 @@ token_t automat(FILE *fptr);
  * pameti
  *
  * @param s		retezec, pro ktery ma byt pamet alokovana
- * @return int	1 v pripade uspechu, 0 v pripade neuspechu
  */
 void str_init(string_t *s);
 
@@ -118,7 +107,6 @@ void str_init(string_t *s);
  *
  * @param s		retezec, do ktereho bude znak pridan
  * @param c		znak, ktery ma byt pridan do retezce
- * @return int	1 v pripade uspechu, 0 v pripade neuspechu
  */
 void str_add_char(string_t *s, char c);
 
