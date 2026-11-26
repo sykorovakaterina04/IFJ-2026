@@ -1,25 +1,57 @@
 #include "symtable.h"
 
+/**
+ * @brief funkce na inicializaci stromu
+ * 
+ * @param parent tabulka symbolu na vyssim scope
+ * @return tree_t* 
+ */
 tree_t *symtable_init(tree_t *parent){
+    // alokace stromu
     tree_t * tree = calloc(1, sizeof(tree_t));
+
+    //kontrola alokace
     if(tree == NULL){
         exit(99);
     }
+
+    // prirazeni stromu nadrazeneho ramce
     tree->parent = parent;
     return tree;
 }
 
+/**
+ * @brief vrati vysku uzlu
+ * 
+ * @param node 
+ * @return int 
+ */
 static int symtable_getheight(tnode_t *node){
     return (node == NULL) ? 0 : 
     (node->height);
 }
 
+/**
+ * @brief vrati vetsi ze dvou cisel
+ * 
+ * @param a 
+ * @param b 
+ * @return int 
+ */
 static int symtable_max(int a, int b){
     return (a > b) ? a : b;
 }
 
+/**
+ * @brief funkce na vyhledani jen v tabulce daneho ramce
+ * 
+ * @param tree 
+ * @param key 
+ * @return tdata_t* 
+ */
 tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
 
+    //kontrola, jestli parametry nejsou NULL
     if(tree == NULL){
         return NULL;
     }
@@ -28,22 +60,40 @@ tdata_t * symtable_lookup_local(const tree_t *tree, const char *key){
         return NULL;
     }
 
+    // zacatek v koreni stromu
     tnode_t *tmp = tree->root;
 
+    
     while(tmp != NULL){
+
+        // pokud je klic mensi nez klic uzlu, na ktery prave ukazuje tmp, tmp jde doleva
         if(strcmp(key, tmp->key) < 0){
             tmp = tmp->left;
+
+        // pokud je vetsi, jde se doprava
         } else if(strcmp(key, tmp->key) > 0){
             tmp = tmp->right;
+
+        // pokud se rovna, jsme na uzlu, ktery hledame
         } else if (strcmp(key, tmp->key) == 0){
             return &(tmp->data);
         }
     }
+
+    // uzel se nenasel
     return NULL;
 }
 
+/**
+ * @brief funkce pro vyhledavani v tabulce a i v tabulkach nadrazenych ramcu
+ * 
+ * @param tree 
+ * @param key 
+ * @return tdata_t* 
+ */
 tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
+    // kontrolam jestli parametry nejsou NULL
     if(tree == NULL ){
         return NULL;
     }
@@ -54,7 +104,7 @@ tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
     tdata_t *data = NULL;
     
-
+    // dokud existuje tabulka nadrazeneho ramce, prohleda tabulku a presune se na nadrazenou
     while(tree){
 
         data = symtable_lookup_local(tree, key);
@@ -63,16 +113,29 @@ tdata_t * symtable_lookup(const tree_t *tree, const char *key){
 
         if(data) return data;
     }
+
+    // uzel se nenasel
     return NULL;
 }
-
+/**
+ * @brief funkce, ktera provede pravou rotaci nad uzlu
+ * 
+ * @param node 
+ * @return tnode_t* 
+ */
 static tnode_t *symtable_rrotate(tnode_t *node){
+
+    // vytyceni uzlu, se kterymi chci v rotaci pracovat
     tnode_t *new_root = node->left;
     tnode_t *node_left = new_root->right;
 
+    // z leveho potomka se stane novy root
     new_root->right = node;
+
+    // byvaly pravy potomek noveho korene se stane levym potomkem byvaleho korene
     node->left = node_left;
 
+    // vypocitani nove vysky uzlu
     node->height = symtable_max(symtable_getheight(node->left), symtable_getheight(node->right)) + 1;
     new_root->height = symtable_max(symtable_getheight(new_root->left), symtable_getheight(new_root->right)) + 1;
 
@@ -80,11 +143,18 @@ static tnode_t *symtable_rrotate(tnode_t *node){
 }
 
 static tnode_t * symtable_lrotate(tnode_t *node){
+
+    // vytyceni uzlu, se kterymi chci v rotaci pracovat
     tnode_t *new_root = node->right;
     tnode_t *node_right = new_root->left;
+
+    // z praveho potomka se stane novy root
     new_root->left = node;
+
+    // byvaly levy potomek noveho korene se stane pravym potomkem byvaleho korene
     node->right =node_right;
 
+    // vypocitani nove vysky uzlu
     node->height = symtable_max(symtable_getheight(node->right), symtable_getheight(node->left)) + 1;
     new_root->height = symtable_max(symtable_getheight(new_root->left), symtable_getheight(new_root->right)) + 1;
 
