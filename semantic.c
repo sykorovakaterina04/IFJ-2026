@@ -513,10 +513,9 @@ void check_func_2(ast_node_t *node, tree_t *local_symtable, int *error) {
 }
 
 void check_func_1(ast_node_t *node, int *error) {
-  0
 
       // kontrola parametru
-      if (node == NULL || *error != 0) {
+  if (node == NULL || *error != 0) {
     return;
   }
 
