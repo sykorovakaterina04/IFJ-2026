@@ -79,21 +79,20 @@ static int prev_col = 0;
 static int tab_seen = 0;
 static int at_line_start = 1;
 
-int str_init(string_t *s) {
+void str_init(string_t *s) {
 	// nastaveni kapacity a malloc nad daty nacteneho stringu
 	s->capacity = INITIAL_STRING_CAPACITY;
 	s->data = (char *)malloc(s->capacity * sizeof(char));
 	if (s->data == NULL) {
 		fprintf(stderr, "Chyba: neuspesny malloc!\n");
-		return 0;
+		exit(99);
 	}
 	// nastaveni nulove delky a prazdneho stringu
 	s->length = 0;
 	s->data[0] = '\0';
-	return 1;
 }
 
-int str_add_char(string_t *s, char c) {
+void str_add_char(string_t *s, char c) {
 	// kontrola, jestli je potreba provest realokaci
 	if (s->length + 1 >= s->capacity) {
 		char *tmp;
@@ -101,7 +100,7 @@ int str_add_char(string_t *s, char c) {
 		tmp = realloc(s->data, s->capacity);
 		if (tmp == NULL) {
 			fprintf(stderr, "Chyba: neuspesny realloc!\n");
-			return 0;
+			exit(99);
 		}
 		s->data = tmp;
 	}
@@ -111,7 +110,6 @@ int str_add_char(string_t *s, char c) {
 	s->length++;
 	// nastaveni konce stringu
 	s->data[s->length] = '\0';
-	return 1;
 }
 
 void str_free(string_t *s) {
