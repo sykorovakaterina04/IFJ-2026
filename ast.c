@@ -15,7 +15,7 @@ ast_tree_t *ast_init() {
 }
 
 /**
- * @brief
+ * @brief alokace noveho uzlu a prirazeni typu
  *
  * @param type
  * @return ast_node_t*
@@ -29,6 +29,8 @@ static ast_node_t *ast_create_node(ast_type_t type) {
   new_node->type = type;
   return new_node;
 }
+
+// naseldujici funkce vzdy vytvori uzel a priradi mu parametry podle struktury
 
 /**
  * @brief vytvoreni uzlu pro binarni operaci
@@ -342,6 +344,7 @@ void ast_destroy_node(ast_node_t *node) {
     return;
   }
 
+  // uvolneni uzlu podle typu
   switch (node->type) {
   case AST_ASSIGN:
     ast_destroy_node(node->data.assign.dest);
