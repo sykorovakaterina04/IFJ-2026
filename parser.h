@@ -1,8 +1,11 @@
 /**
  * @file parser.h
- * @brief Rozhraní syntaktického analyzátoru (rekurzivní sestup) pro překladač jazyka IFJ26
+ * @author Doubrava Daniel (xdoubrd00)
+ * @brief Rozhraní syntaktického analyzátoru (rekurzivní sestup) pro překladač
+ * jazyka IFJ26
  *
- * @author Daniel Doubrava (xdoubrd00)
+ * @date 2026-11-26
+ *
  */
 
 #ifndef PARSER_H
@@ -12,9 +15,9 @@
 #include "automat.h"
 #include "symtable.h"
 
-
 /**
- * @brief Indent začátku aktuálního logického řádku (kontrola odsazení v závorkách)
+ * @brief Indent začátku aktuálního logického řádku (kontrola odsazení v
+ * závorkách)
  */
 extern int parser_line_indent;
 /**
@@ -31,7 +34,7 @@ typedef struct {
  */
 extern token_t current_token;
 
-/** 
+/**
  * @brief Jméno funkce s anotací @c \@main
  */
 extern char *main_func_name;
@@ -97,12 +100,12 @@ int register_functions(tree_t *global_symtable);
  * @param global_symtable Globální tabulka symbolů
  * @param local_symtable Tabulka symbolů bloku
  * @param indent_stack Zásobník odsazení
- * @param func_return_file Návratový typ aktuální funkce
+ * @param func_return_type Návratový typ aktuální funkce
  * @param[out] out_block Uzel bloku v AST
  * @return 0 při úspěchu, jinak chybový kód
  */
 int parse_block(tree_t *global_symtable, tree_t *local_symtable,
-                indent_stack_t *indent_stack, data_type_t func_return_file,
+                indent_stack_t *indent_stack, data_type_t func_return_type,
                 ast_node_t **out_block);
 
 #endif

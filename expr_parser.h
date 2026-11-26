@@ -1,10 +1,12 @@
 /**
  * @file expr_parser.h
- * @brief Rozhraní precedenčního syntaktického analyzátoru výrazů (PSA) pro jazyk IFJ26.
+ * @author Doubrava Daniel (xdoubrd00)
+ * @brief Rozhraní precedenčního syntaktického analyzátoru výrazů (PSA) pro
+ * jazyk IFJ26.
  *
- * @author Daniel Doubrava (xdoubrd00)
+ * @date 2026-11-26
+ *
  */
-
 
 #ifndef EXPR_PARSER_H
 #define EXPR_PARSER_H

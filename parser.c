@@ -1,31 +1,32 @@
 /**
  * @file parser.c
- * @brief Implementace syntaktického analyzátoru (rekurzivní sestup) a stavby
- * AST pro jazyk IFJ26.
+ * @author Doubrava Daniel (xdoubrd00)
+ * @brief Implementace syntaktického analyzátoru (rekurzivní sestup) pro
+ * překladač jazyka IFJ26
  *
- * @author Daniel Doubrava (xdoubrd00)
+ * @date 2026-11-26
+ *
  */
 
 #include "parser.h"
 #include "automat.h"
 #include "expr_parser.h"
 #include "symtable.h"
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// pomocne struktry, funkce
 /**
- * @brief Záznam o volání funkce, která v okamžiku volání ještě nebyla definována
+ * @brief Záznam o volání funkce, která v okamžiku volání ještě nebyla
+ * definována
  *
  * Kontrola počtu a typů argumentů se u takového volání odkládá na
  * konec syntaktické analýzy (viz ::verify_pending_calls)
  */
 typedef struct {
-  char *func_name;       ///< Jméno volané funkce (vlastní kopie)
-  data_type_t *arg_types; ///< Typy argumentů v místě volání (může být NULL)
-  int arg_count;         ///< Počet argumentů
+  char *func_name;        ///< Jméno volané funkce
+  data_type_t *arg_types; ///< Typy argumentů (může být NULL)
+  int arg_count;          ///< Počet argumentů
 } pending_call_t;
 
 /** @brief Dynamické pole odložených kontrol volání funkcí */
@@ -48,7 +49,19 @@ static ast_node_t *current_func = NULL;
 /**
  * @brief Čítač unikátních ID proměnných; rozlišuje překrývání (shadowing)
  */
-static int next_var_id = 0; // shadowing
+static int next_var_id = 0;
+
+/**
+ * @brief Jméno funkce označené anotací @c \@main (pro generátor kódu)
+ */
+char *main_func_name = NULL;
+
+/**
+ * @brief Sloupec začátku aktuálního logického řádku
+ *
+ * Používá se ke kontrole odsazení pokračování uvnitř závorek
+ */
+int parser_line_indent = -1;
 
 static void pending_calls_free(void);
 static int verify_pending_calls(tree_t *global_symtable);
@@ -71,18 +84,6 @@ static int insert_var(tree_t *table, const char *name, node_type_t type,
                       data_type_t dt, int line, int *out_id);
 
 /**
- * @brief Jméno funkce označené anotací @c \@main (pro generátor kódu)
- */
-char *main_func_name = NULL;
-
-/**
- * @brief Sloupec začátku aktuálního logického řádku
- *
- * Používá se ke kontrole odsazení pokračování uvnitř závorek
- */
-int parser_line_indent = -1;
-
-/**
  * @brief Vytvoří kopii řetězce na haldě
  * @param s Zdrojový řetězec
  * @return Nově alokovaná kopie (uvolňuje volající) nebo NULL při chybě alokace
@@ -96,7 +97,8 @@ static char *dup_str(const char *s) {
 }
 
 /**
- * @brief Připojí uzel (včetně jeho řetězu @c next) na konec jednosměrného seznamu
+ * @brief Připojí uzel (včetně jeho řetězu @c next) na konec jednosměrného
+ * seznamu
  * @param head Ukazatel na začátek seznamu (při prázdném seznamu se nastaví)
  * @param tail Ukazatel na poslední uzel seznamu (po připojení se aktualizuje)
  * @param node Připojovaný uzel; NULL je ignorováno
@@ -119,7 +121,8 @@ static void list_append(ast_node_t **head, ast_node_t **tail,
 }
 
 /**
- * @brief Dokončí jednořádkový příkaz: ověří jeho správné ukončení a při chybě uvolní AST
+ * @brief Dokončí jednořádkový příkaz: ověří jeho správné ukončení a při chybě
+ * uvolní AST
  * @param res Návratový kód dosavadního zpracování příkazu
  * @param out Ukazatel na vytvořený uzel; při chybě se uvolní a nastaví na NULL
  * @return 0 při úspěchu, jinak chybový kód (viz ::expr_ended)
@@ -145,7 +148,8 @@ static int indent_top(const indent_stack_t *stack) {
 }
 
 /**
- * @brief Vloží novou úroveň odsazení na zásobník (podle potřeby zvětší kapacitu)
+ * @brief Vloží novou úroveň odsazení na zásobník (podle potřeby zvětší
+ * kapacitu)
  * @param stack Zásobník odsazení
  * @param col Sloupec nového bloku
  * @retval 0 Úspěch
@@ -164,37 +168,6 @@ static int indent_push(indent_stack_t *stack, int col) {
   stack->items[++stack->top] = col;
   return 0;
 }
-
-/**
- * @brief Přeskočí všechny po sobě jdoucí tokeny konce řádku
- */
-static void skip_eol() {
-  while (current_token.type == TOKEN_EOL) {
-    next();
-  }
-}
-
-/**
- * @brief Přeskočí konce řádků uvnitř závorek a zkontroluje odsazení pokračování
- *
- * Pokud byl nějaký konec řádku přeskočen, musí následující token ležet
- * více vpravo než začátek logického řádku (::parser_line_indent)
- * @retval 0 Úspěch
- * @retval 2 Pokračování není dostatečně odsazeno
- */
-static int skip_eol_cont(void) {
-  bool skipped = false;
-  while (current_token.type == TOKEN_EOL) {
-    skipped = true;
-    next();
-  }
-  if (skipped && current_token.type != TOKEN_EOF &&
-      current_token.indent <= parser_line_indent) {
-    return 2;
-  }
-  return 0;
-}
-
 /**
  * @brief Zjistí, zda zásobník obsahuje danou úroveň odsazení
  *
@@ -214,7 +187,8 @@ static bool indent_contains(const indent_stack_t *stack, int col) {
 }
 
 /**
- * @brief Odebere vrcholovou úroveň odsazení (základní úroveň se nikdy neodebírá)
+ * @brief Odebere vrcholovou úroveň odsazení (základní úroveň se nikdy
+ * neodebírá)
  * @param stack Zásobník odsazení
  */
 static void indent_pop(indent_stack_t *stack) {
@@ -236,7 +210,7 @@ static int indent_init(indent_stack_t *stack) {
   if (stack->items == NULL) {
     return 99;
   }
-  stack->items[0] = 0; // 
+  stack->items[0] = 0;
   return 0;
 }
 
@@ -251,6 +225,36 @@ static void indent_free(indent_stack_t *stack) {
   }
   stack->top = 0;
   stack->capacity = 0;
+}
+
+/**
+ * @brief Přeskočí všechny po sobě jdoucí tokeny konce řádku
+ */
+static void skip_eol() {
+  while (current_token.type == TOKEN_EOL) {
+    next();
+  }
+}
+
+/**
+ * @brief Přeskočí konce řádků uvnitř závorek a zkontroluje odsazení pokračování
+ *
+ * Pokud byl nějaký konec řádku přeskočen, musí následující token ležet
+ * více vpravo než začátek logického řádku
+ * @retval 0 Úspěch
+ * @retval 2 Pokračování není dostatečně odsazeno
+ */
+static int skip_eol_cont(void) {
+  bool skipped = false;
+  while (current_token.type == TOKEN_EOL) {
+    skipped = true;
+    next();
+  }
+  if (skipped && current_token.type != TOKEN_EOF &&
+      current_token.indent <= parser_line_indent) {
+    return 2;
+  }
+  return 0;
 }
 
 /**
@@ -273,10 +277,8 @@ static bool looked_ahead = false;
  * @return Nový token
  */
 token_t get_token() {
-  // Zavolani pro dalsi token
-
   token_t t = automat(stdin);
-  return t; // CHYBA
+  return t;
 }
 
 /**
@@ -294,7 +296,7 @@ static void free_token(token_t *tok) {
 /**
  * @brief Nahlédne o jeden token dopředu bez jeho zpracování
  *
- * Načtený token se uloží a vrátí ho následující volání ::next
+ * Načtený token se uloží a vrátí ho následující volání
  * @return Následující token
  */
 token_t peek_token(void) {
@@ -306,9 +308,10 @@ token_t peek_token(void) {
 }
 
 /**
- * @brief Posune parser na další token (uvolní předchozí, použije token z peek, jinak čte nový)
+ * @brief Posune parser na další token (uvolní předchozí, použije token z peek,
+ * jinak čte nový)
  *
- * Výsledek je uložen v ::current_token
+ * Výsledek je uložen v current_token
  */
 void next(void) {
   free_token(&current_token);
@@ -344,7 +347,8 @@ static void cleanup_parser(tree_t *global_symtable,
 }
 
 /**
- * @brief Společné ukončení parseru při chybě: uvolní AST, zdroje a vrátí chybový kód
+ * @brief Společné ukončení parseru při chybě: uvolní AST, zdroje a vrátí
+ * chybový kód
  * @param chyba Chybový kód k vrácení
  * @param head Dosud vytvořený seznam funkcí v AST
  * @param ast Kořenová struktura AST
@@ -370,38 +374,34 @@ static int parse_fail(int chyba, ast_node_t *head, ast_tree_t *ast,
  */
 int parse_prologue() {
 
-  // prvni token musi byt
-  // import
-  // dalsi jeden token? asi nejaky special
-  // ifj26*
-  skip_eol();
+  skip_eol(); // prvni token musi byt Import
 
   if (current_token.type != KEYWORD_IMPORT || current_token.indent != 0) {
-    return 2; // CHYBA
+    return 2;
   }
 
-  next(); // druhy token musi byt ifj
+  next(); // druhy token musi byt ifj26
 
   if (current_token.type != TOKEN_IDENTIFIER ||
       strcmp(current_token.str_val, "ifj26") != 0) {
 
-    return 2; // CHYBA
+    return 2;
   }
 
   next(); // treti token musi byt .
 
   if (current_token.type != TOKEN_DOT) {
-    return 2; // CHYBA
+    return 2;
   }
 
   next(); // ctvrty token musi byt *
 
   if (current_token.type != TOKEN_MUL) {
-    return 2; // CHYBA
+    return 2;
   }
   next();
   if (current_token.type != TOKEN_EOL && current_token.type != TOKEN_EOF) {
-    return 2; // CHYBA
+    return 2;
   }
   return 0;
 }
@@ -410,7 +410,7 @@ int parse_prologue() {
  * @brief Hlavní vstupní bod syntaktické analýzy (rekurzivní sestup)
  *
  * Inicializuje tabulky symbolů (včetně vestavěných funkcí), zpracuje prolog
- * a definice funkcí na nejvyšší úrovni (včetně funkce s anotací @c \@main),
+ * a definice funkcí na nejvyšší úrovni,
  * na konci ověří odložená volání funkcí a přítomnost vstupní funkce
  * @param[out] out_ast Vytvořený abstraktní syntaktický strom (při chybě NULL)
  * @retval 0 Úspěch
@@ -426,14 +426,14 @@ int parse(ast_tree_t **out_ast) {
   int result;
   int main = 0;
   *out_ast = NULL;
-  pending_calls.items = NULL; 
+  pending_calls.items = NULL;
   pending_calls.count = 0;
   pending_calls.capacity = 0;
   next_var_id = 0;
 
   tree_t *global_symtable = symtable_init(NULL); // globalni tabulka pro funkce
   if (global_symtable == NULL) {
-    return 99; // chyba alokace
+    return 99;
   }
   if (register_functions(global_symtable) != 0) {
     symtable_destroy_tree(global_symtable);
@@ -447,6 +447,11 @@ int parse(ast_tree_t **out_ast) {
   }
 
   ast_tree_t *ast = ast_init();
+  if (ast == NULL) {
+    indent_free(&indent_stack);
+    symtable_destroy_tree(global_symtable);
+    return 99;
+  }
   ast_node_t *head = NULL;
   ast_node_t *tail = NULL;
 
@@ -456,23 +461,21 @@ int parse(ast_tree_t **out_ast) {
 
   result = parse_prologue();
   if (result != 0) {
-    return parse_fail(2, head, ast, global_symtable,
-                      &indent_stack); // CHYBA // Chyba v prologu
+    return parse_fail(2, head, ast, global_symtable, &indent_stack);
   }
 
   while (current_token.type != TOKEN_EOF) {
     switch (current_token.type) {
-    case KEYWORD_DEF:
-      ast_node_t *func = {NULL};
+    case KEYWORD_DEF: {
+      ast_node_t *func = NULL;
       result = parse_function(global_symtable, &indent_stack, &func);
       if (result != 0) {
 
-        return parse_fail(result, head, ast, global_symtable,
-                          &indent_stack); // CHYBA
+        return parse_fail(result, head, ast, global_symtable, &indent_stack);
       }
       list_append(&head, &tail, func);
       break;
-
+    }
     case TOKEN_EOL:
       next();
       break;
@@ -480,8 +483,7 @@ int parse(ast_tree_t **out_ast) {
     case TOKEN_AT_MAIN:
 
       if (current_token.indent != indent_top(&indent_stack)) {
-        return parse_fail(2, head, ast, global_symtable,
-                          &indent_stack); // CHYBA
+        return parse_fail(2, head, ast, global_symtable, &indent_stack);
       }
       next();
       bool had_EOL = false;
@@ -492,44 +494,39 @@ int parse(ast_tree_t **out_ast) {
 
       if (current_token.type != KEYWORD_DEF ||
           (had_EOL && indent_top(&indent_stack) != current_token.indent)) {
-        return parse_fail(2, head, ast, global_symtable,
-                          &indent_stack); // CHYBA
+        return parse_fail(2, head, ast, global_symtable, &indent_stack);
       }
 
       if (main) {
-        return parse_fail(4, head, ast, global_symtable,
-                          &indent_stack); // CHYBA
+        return parse_fail(4, head, ast, global_symtable, &indent_stack);
       }
       main = 1;
       ast_node_t *mfunc = NULL;
       result = parse_main(global_symtable, &indent_stack, &mfunc);
       if (result != 0) {
-        return parse_fail(result, head, ast, global_symtable,
-                          &indent_stack); // CHYBA
+        return parse_fail(result, head, ast, global_symtable, &indent_stack);
       }
       list_append(&head, &tail, mfunc);
       break;
 
     default:
-      return parse_fail(2, head, ast, global_symtable, &indent_stack); // CHYBA
+      return parse_fail(2, head, ast, global_symtable, &indent_stack);
     }
   }
 
   result = verify_pending_calls(global_symtable);
   if (result != 0) {
-    return parse_fail(result, head, ast, global_symtable,
-                      &indent_stack); // CHYBA
+    return parse_fail(result, head, ast, global_symtable, &indent_stack);
   }
 
   if (main != 1) {
-    return parse_fail(3, head, ast, global_symtable, &indent_stack); // CHYBA
+    return parse_fail(3, head, ast, global_symtable, &indent_stack);
   }
-  cleanup_parser(global_symtable, &indent_stack,
-                 false);                  /////nemazat global_symtable
+  cleanup_parser(global_symtable, &indent_stack, false);
   ast->global_symtable = global_symtable; // nastaveni global symtable
   ast->root = head;
   *out_ast = ast;
-  return 0; //
+  return 0;
 }
 
 /**
@@ -541,7 +538,7 @@ int parse(ast_tree_t **out_ast) {
  */
 static int parse_type(data_type_t *out_type) {
   switch (current_token.type) {
-  case KEYWORD_INT: // podle typu mezi zavorkama si to vratim zrovna
+  case KEYWORD_INT:
     *out_type = TYPE_INT;
     next();
     return 0;
@@ -558,10 +555,10 @@ static int parse_type(data_type_t *out_type) {
     next();
     return 0;
   case TOKEN_IDENTIFIER:
-    return 3; // neznamu typ
+    return 3; // neznamy typ
 
   default:
-    return 2; // chyba
+    return 2;
   }
 }
 
@@ -728,7 +725,8 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
 }
 
 /**
- * @brief Zjistí kompatibilitu typů (shodné typy, @c TYPE_ANY nebo rozšíření Int na Double)
+ * @brief Zjistí kompatibilitu typů (shodné typy, @c TYPE_ANY nebo rozšíření Int
+ * na Double)
  * @param source Typ zdrojové hodnoty
  * @param target Cílový typ
  * @return true, pokud lze hodnotu typu @p source použít na místě @p target
@@ -747,10 +745,11 @@ static bool is_type_compatible(data_type_t source, data_type_t target) {
 }
 
 /**
- * @brief Zpracuje jeden příkaz bloku (definice, přiřazení, volání, if, while, return, výraz)
+ * @brief Zpracuje jeden příkaz bloku (definice, přiřazení, volání, if, while,
+ * return, výraz)
  *
- * Příkaz nemůže začínat operátorem Rozlišení přiřazení a volání funkce se
- * provádí nahlédnutím o jeden token dopředu
+ * Příkaz nemůže začínat operátorem. Rozlišení přiřazení a volání funkce se
+ * provádí nahlédnutím o jeden token dopředu.
  * @param global_symtable Globální tabulka symbolů (funkce)
  * @param local_symtable Tabulka symbolů aktuálního bloku
  * @param indent_stack Zásobník odsazení
@@ -816,7 +815,8 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable,
 }
 
 /**
- * @brief Ověří, že jednořádkový příkaz skončil koncem řádku, souboru nebo středníkem
+ * @brief Ověří, že jednořádkový příkaz skončil koncem řádku, souboru nebo
+ * středníkem
  * @retval 0 Správné ukončení
  * @retval 2 Za příkazem následuje nepovolený token
  */
@@ -898,7 +898,7 @@ static int verify_pending_calls(tree_t *global_symtable) {
     pending_call_t *call = &pending_calls.items[i];
     tdata_t *func_sym = symtable_lookup(global_symtable, call->func_name);
     if (func_sym == NULL || func_sym->type != FUNCTION) {
-      return 3; // undefined funkce
+      return 3; // nedefinovana funkce
     }
     if (call->arg_count != func_sym->param_count) {
       return 5; //  pocet arg
@@ -916,8 +916,8 @@ static int verify_pending_calls(tree_t *global_symtable) {
  * @brief Zpracuje volání funkce @c id(argumenty)
  *
  * Argumenty jsou parsovány jako výrazy. Je-li funkce již známá, ihned se
- * zkontroluje počet a typy argumentů; jinak se volání odloží (::pending_calls_add)
- * a výsledný typ je @c TYPE_ANY.
+ * zkontroluje počet a typy argumentů; jinak se volání odloží
+ * (::pending_calls_add) a výsledný typ je @c TYPE_ANY.
  * @param global_symtable Globální tabulka symbolů
  * @param local_symtable Lokální tabulka symbolů
  * @param[out] out_return_type Návratový typ funkce
@@ -1105,7 +1105,7 @@ static int parse_rs(tree_t *global_symtable, tree_t *local_symtable,
 
 /**
  * @brief Zpracuje definici proměnné @c val / @c var (s volitelným typem).
- 
+
  * Pravá strana se parsuje před vložením proměnné do tabulky symbolů, takže
  * @c "val x = x + 1" v podbloku použije vnější @c x. Vytvoří dvojici uzlů
  * definice a přiřazení
@@ -1411,7 +1411,7 @@ static int parse_while(tree_t *global_symtable, tree_t *local_symtable,
     ast_destroy_node(cond);
     return 2;
   }
-    // podminka musi byt Boolean; TYPE_ANY = typ jeste neznamy
+  // podminka musi byt Boolean; TYPE_ANY = typ jeste neznamy
   if (cond_type != TYPE_BOOL && cond_type != TYPE_ANY) {
     ast_destroy_node(cond);
     return 6;
@@ -1500,16 +1500,17 @@ static int parse_return(tree_t *global_symtable, tree_t *local_symtable,
 /**
  * @brief Zpracuje odsazený blok příkazů
  *
- * Odsazení prvního příkazu musí být větší než odsazení nadřazeného bloku, všechny
- * příkazy bloku musí mít stejné odsazení. Blok končí návratem na menší odsazení,
- * které musí odpovídat některému nadřazenému bloku. Podporuje více příkazů
- * na řádku oddělených středníkem Blok nesmí být prázdný
+ * Odsazení prvního příkazu musí být větší než odsazení nadřazeného bloku,
+ * všechny příkazy bloku musí mít stejné odsazení. Blok končí návratem na menší
+ * odsazení, které musí odpovídat některému nadřazenému bloku. Podporuje více
+ * příkazů na řádku oddělených středníkem Blok nesmí být prázdný
  * @param global_symtable Globální tabulka symbolů
  * @param local_symtable Tabulka symbolů tohoto bloku
  * @param indent_stack Zásobník odsazení
- * @param func_return_file Návratový typ aktuální funkce
+ * @param func_return_type Návratový typ aktuální funkce
  * @param[out] out_block Uzel bloku v AST
- * @return 0 při úspěchu, jinak chybový kód (2 při špatném odsazení nebo syntaxi)
+ * @return 0 při úspěchu, jinak chybový kód (2 při špatném odsazení nebo
+ * syntaxi)
  */
 int parse_block(tree_t *global_symtable, tree_t *local_symtable,
                 indent_stack_t *indent_stack, data_type_t func_return_type,
@@ -1618,7 +1619,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack,
   // název funkce (identifikátor)
   if (current_token.type != TOKEN_IDENTIFIER ||
       strcmp(current_token.str_val, "_") == 0) {
-    return 2; // CHYBA // Syntaktická chyba
+    return 2; // Syntaktická chyba
   }
 
   // redefinice
@@ -1644,7 +1645,7 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack,
   tree_t *local_symtable = symtable_init(global_symtable);
   if (local_symtable == NULL) {
     free(func_name);
-    return 99; // chyba alokace
+    return 99;
   }
 
   data_type_t *param_types = NULL;
@@ -1816,7 +1817,7 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack,
   // jmeno funkce
   if (current_token.type != TOKEN_IDENTIFIER ||
       strcmp(current_token.str_val, "_") == 0) {
-    return 2; // CHYBA //
+    return 2; //
   }
 
   if (symtable_lookup(global_symtable, current_token.str_val) != NULL) {
@@ -1848,7 +1849,7 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack,
     return 2;
   }
   next(); // za (
-  if(skip_eol_cont() != 0 ){
+  if (skip_eol_cont() != 0) {
     free(func_name);
     return 2;
   }
@@ -1950,7 +1951,8 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack,
 }
 
 /**
- * @brief Zaregistruje vestavěné funkce (print, readLine, readInt, readDouble, toStr, toInt, strLength, subStr, ord, chr) do globální tabulky symbolů
+ * @brief Zaregistruje vestavěné funkce (print, readLine, readInt, readDouble,
+ * toStr, toInt, strLength, subStr, ord, chr) do globální tabulky symbolů
  * @param global_symtable Globální tabulka symbolů
  * @retval 0 Úspěch
  * @retval 99 Chyba alokace
@@ -1993,7 +1995,8 @@ int register_functions(tree_t *global_symtable) {
 }
 
 /**
- * @brief Vloží proměnnou nebo parametr do tabulky symbolů a přidělí mu unikátní ID
+ * @brief Vloží proměnnou nebo parametr do tabulky symbolů a přidělí mu unikátní
+ * ID
  * @param table Cílová tabulka symbolů
  * @param name Jméno proměnné
  * @param type Druh symbolu (@c VARIABLE, @c KONSTANT, @c PARAM)
