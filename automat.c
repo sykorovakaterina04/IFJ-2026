@@ -439,6 +439,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'm') {
 				state = KA_AT_A;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -446,6 +448,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'a') {
 				state = KA_AT_I;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -453,6 +457,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'i') {
 				state = KA_AT_N;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -460,6 +466,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'n') {
 				state = KA_AT_MAIN_END;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -471,6 +479,8 @@ token_t automat(FILE *fptr) {
 				token.col = token_start_col;
 				return token;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
