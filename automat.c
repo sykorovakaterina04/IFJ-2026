@@ -419,6 +419,15 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 			} else {
 				my_ungetc(c, fptr);
+
+				// kontrola samotneho '_'
+				if (buffer.length == 1 && buffer.data[0] == '_') {
+					fprintf(stderr, "Lexikalni chyba: samotne '_' neni platny "
+									"identifikator\n");
+					str_free(&buffer);
+					exit(1);
+				}
+
 				token.type = keyword_type(buffer.data);
 				if (token.type == TOKEN_IDENTIFIER) {
 					token.str_val =
