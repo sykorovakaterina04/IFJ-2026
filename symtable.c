@@ -3,7 +3,7 @@
 /**
  * @brief funkce na inicializaci stromu
  * 
- * @param parent tabulka symbolu na vyssim scope
+ * @param parent tabulka symbolu na vyssim ramci
  * @return tree_t* 
  */
 tree_t *symtable_init(tree_t *parent){
