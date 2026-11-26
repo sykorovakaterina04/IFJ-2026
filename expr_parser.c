@@ -1,6 +1,6 @@
 /**
  * @file expr_parser.c
- * @brief Implementace precedenční syntaktické analýzy výrazů (PSA) a tvorby AST podstromů.
+ * @brief Implementace precedenční syntaktické analýzy výrazů (PSA) a tvorby AST podstromů
  *
  *  @author Daniel Doubrava (xdoubrd00)
  */
@@ -14,8 +14,13 @@ static data_type_t binop_result_type(binop_type_t op, data_type_t l,
                                      data_type_t r);
 // symboly precedenci synt analyzy
 
+/**
+ * @brief Symboly precedenční analýzy
+ *
+ * Terminály a pomocné symboly na zásobníku
+ */
 enum {
-  P_UN = 0, // unarni + -  //-a
+  P_UN = 0, // unarni + -  // -a
   P_MUL,    // * /
   P_ADD,    // binarni + - // a - b
   P_REL,    // < <= > >=
@@ -24,16 +29,20 @@ enum {
   P_RP,     // )
   P_ID,     // operand (i)
   P_END,    // DNO
-  P_TERM_COUNT,
+  P_TERM_COUNT, // Počet terminálů (velikost tabulky)
   SYM_E = P_TERM_COUNT, // neterminal E
   SYM_HANDLE            // zarazka <
 };
 
-// precednci tabulka
-// F konec, < odlozit , > redukovat, = uzavirka, ' 'chyba
-// radek nejvyssi terminal, sloupec co dojde
+/**
+ * @brief Precedenční tabulka
+ *
+ * Řádek odpovídá nejvyššímu terminálu na zásobníku, sloupec vstupnímu symbolu
+ * Hodnoty: @c '<' odložit (vložit zarážku), @c '=' uzavřít závorku,
+ * @c '>' redukovat, @c 'F' úspěšný konec výrazu, @c ' ' chyba
+ */
 static const char PSA_TABLE[P_TERM_COUNT][P_TERM_COUNT] = {
-    //      UN  MUL  ADD  REL  EQ    (    )    I    DNO
+    //UN  MUL  ADD  REL  EQ    (    )    I    DNO
     {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // UN
     {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // MUL
     {'<', '<', '>', '>', '>', '<', '>', '<', '>'}, // ADD
@@ -45,22 +54,31 @@ static const char PSA_TABLE[P_TERM_COUNT][P_TERM_COUNT] = {
     {'<', '<', '<', '<', '<', '<', ' ', '<', 'F'}, // DNO
 };
 
-// zasobnik
+/**
+ * @brief Položka zásobníku precedenční analýzy
+ */
 typedef struct {
-  int sym;          // symbol
-  token_type_t tok; // pro operatory// puvodni token
-  ast_node_t *node; // pro operandy
-  data_type_t type;
-  int line;
+  int sym;          ///< Symbol 
+  token_type_t tok; ///< Původní token 
+  ast_node_t *node; ///< Uzel AST 
+  data_type_t type; ///< Datový typ výrazu
+  int line;         ///< Řádek ve zdrojovém kódu
 } psa_item_t;
 
+/**
+ * @brief Zásobník precedenční syntaktické analýzy
+ */
 typedef struct {
-  psa_item_t *items;
-  int top; // pocet prvku
-  int cap;
+  psa_item_t *items; ///< Pole položek
+  int top; ///< Počet prvků na zásobníku
+  int cap; ///< Alokovaná kapacita
 } psa_stack_t;
 
-// token na operaci
+/**
+ * @brief Převede token operátoru na typ binární operace v AST
+ * @param tok Typ tokenu
+ * @return Odpovídající typ
+ */
 static binop_type_t tok_to_binop(token_type_t tok) {
   switch (tok) {
   case TOKEN_ADD:
@@ -86,7 +104,13 @@ static binop_type_t tok_to_binop(token_type_t tok) {
   }
 }
 
-// vkladani
+/**
+ * @brief Vloží položku na zásobník (podle potřeby zvětší kapacitu)
+ * @param stack Zásobník
+ * @param it Vkládaná položka
+ * @retval 0 Úspěch
+ * @retval 99 Chyba alokace
+ */
 static int st_push(psa_stack_t *stack, psa_item_t it) {
   if (stack->top >= stack->cap) {
     int nc = stack->cap ? stack->cap * 2 : 16;
@@ -100,7 +124,12 @@ static int st_push(psa_stack_t *stack, psa_item_t it) {
   stack->items[stack->top++] = it;
   return 0;
 }
-// vrchol
+
+/**
+ * @brief Najde nejvyšší terminál na zásobníku
+ * @param stack Zásobník
+ * @return Index nejvyššího terminálu
+ */
 static int st_top_terminal(const psa_stack_t *stack) {
   for (int i = stack->top - 1; i >= 0; i--) {
     if (stack->items[i].sym < P_TERM_COUNT) {
@@ -110,7 +139,13 @@ static int st_top_terminal(const psa_stack_t *stack) {
   return 0;
 }
 
-// < za idx
+/**
+ * @brief Vloží zarážku @c < za položku na pozici @p idx
+ * @param stack Zásobník
+ * @param idx Index položky, za kterou se zarážka vloží
+ * @retval 0 Úspěch
+ * @retval 99 Chyba alokace
+ */
 static int st_insert_handle_after(psa_stack_t *stack, int idx) {
   psa_item_t h = {0};
   h.sym = SYM_HANDLE;
@@ -122,7 +157,16 @@ static int st_insert_handle_after(psa_stack_t *stack, int idx) {
   return 0;
 }
 
-// redukce
+/**
+ * @brief Provede redukci podle pravidel gramatiky výrazů
+ *
+ * Pravidla: E -> i, E -> +E | -E, E -> E op E, E -> (E). Při redukci se
+ * sestavuje AST a zjišťuje typ výrazu. Unární mínus se převádí na @c 0 - E
+ * @param stack Zásobník
+ * @retval 0 Úspěch
+ * @retval 2 Žádné pravidlo neodpovídá
+ * @retval 99 Chyba alokace
+ */
 static int psa_reduce(psa_stack_t *stack) {
   int h = stack->top - 1;
   while (h >= 0 && stack->items[h].sym != SYM_HANDLE) {
@@ -131,7 +175,7 @@ static int psa_reduce(psa_stack_t *stack) {
   if (h < 0) {
     return 2;
   }
-  int k = stack->top - h - 1; // delka prave strany
+  int k = stack->top - h - 1; // délka pravé strany
   psa_item_t *r = &stack->items[h + 1];
   psa_item_t res = {0};
   res.sym = SYM_E;
@@ -146,7 +190,7 @@ static int psa_reduce(psa_stack_t *stack) {
     ast_node_t *n = r[1].node;
     if (r[0].tok == TOKEN_SUB) {
       if (n->type == AST_LITERAL && n->data.literal.type == TYPE_INT) {
-        n->data.literal.i_val = -n->data.literal.i_val; // zaporny literal
+        n->data.literal.i_val = -n->data.literal.i_val; // zaporný literál
       } else if (n->type == AST_LITERAL &&
                  n->data.literal.type == TYPE_DOUBLE) {
         n->data.literal.d_val = -n->data.literal.d_val;
@@ -192,7 +236,17 @@ static int psa_reduce(psa_stack_t *stack) {
   return st_push(stack, res);
 }
 
-// EQ, NEQ, LT, GT, LEQ, GEQ
+/**
+ * @brief Určí výsledný typ binární operace
+ *
+ * Relační operace vrací @c TYPE_BOOL, @c + nad řetězci řetězec, aritmetika
+ * nad čísly Int/Double (s rozšířením Int na Double). Je-li některý operand
+ * @c TYPE_ANY, výsledek je @c TYPE_ANY
+ * @param op Operace
+ * @param l Typ levého operandu
+ * @param r Typ pravého operandu
+ * @return Výsledný typ
+ */
 static data_type_t binop_result_type(binop_type_t op, data_type_t l,
                                      data_type_t r) {
   if (op >= EQ) {
@@ -212,7 +266,18 @@ static data_type_t binop_result_type(binop_type_t op, data_type_t l,
   return TYPE_ANY;
 }
 
-// operandy
+/**
+ * @brief Vytvoří operand z aktuálního tokenu (literál nebo proměnná)
+ *
+ * Rozpoznává literály Int, Double, String a Unit (@c ()) a identifikátory
+ * proměnných (ověřené v tabulce symbolů)
+ * @param[out] it Vytvořená položka zásobníku
+ * @param local_symtable Tabulka symbolů pro vyhledání proměnných
+ * @retval 0 Úspěch
+ * @retval 2 Nepovolený token nebo samotné podtržítko
+ * @retval 3 Nedefinovaná proměnná (nebo identifikátor funkce)
+ * @retval 99 Chyba alokace
+ */
 static int make_operand(psa_item_t *it, tree_t *local_symtable) {
   int line = current_token.line;
   switch (current_token.type) {
@@ -259,7 +324,12 @@ static int make_operand(psa_item_t *it, tree_t *local_symtable) {
   return 0;
 }
 
-// pro uklid
+/**
+ * @brief Uvolní zásobník a uzly AST, které na něm zůstaly
+ * @param stack Zásobník
+ * @param err_code Kód, který se vrátí
+ * @return Hodnota @p err_code
+ */
 static int clean(psa_stack_t *stack, int err_code) {
   if (stack->items != NULL) {
     for (int i = 0; i < stack->top; i++) {
@@ -271,6 +341,22 @@ static int clean(psa_stack_t *stack, int err_code) {
   return err_code;
 }
 
+/**
+ * @brief Precedenční syntaktická analýza výrazu
+ *
+ * Zpracovává literály, proměnné, závorky, unární @c + @c - a binární operátory
+ * @c * @c / @c + @c - @c < @c <= @c > @c >= @c == @c !=. Výraz končí prvním
+ * tokenem, který do výrazu nepatří. Konce řádků jsou povoleny uvnitř závorek
+ * a při @p in_parens, vždy s kontrolou odsazení pokračování. 
+ * @param local_symtable Tabulka symbolů pro vyhledání proměnných
+ * @param[out] out_type Typ výrazu
+ * @param[out] out_node Kořen AST výrazu (může být NULL, pak se uzel uvolní)
+ * @param in_parens Výraz je uvnitř závorek (např argument volání funkce)
+ * @retval 0 Úspěch
+ * @retval 2 Syntaktická chyba
+ * @retval 3 Nedefinovaná proměnná
+ * @retval 99 Interní chyba
+ */
 int parse_expression_ex(tree_t *local_symtable, data_type_t *out_type,
                         ast_node_t **out_node, bool in_parens) {
 
