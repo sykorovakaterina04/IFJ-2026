@@ -380,7 +380,7 @@ int parse_expression_ex(tree_t *local_symtable, data_type_t *out_type,
       next();
       // pokracovani musi byt odsazeno vic nez zacatek  radku
       if (current_token.type != TOKEN_EOL && current_token.type != TOKEN_EOF &&
-          current_token.col <= parser_line_indent) {
+          current_token.indent <= parser_line_indent) {
         return clean(&stack, 2);
       }
       continue;

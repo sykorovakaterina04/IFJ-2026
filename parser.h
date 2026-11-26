@@ -14,7 +14,7 @@
 
 
 /**
- * @brief Sloupec začátku aktuálního logického řádku (kontrola odsazení v závorkách)
+ * @brief Indent začátku aktuálního logického řádku (kontrola odsazení v závorkách)
  */
 extern int parser_line_indent;
 /**

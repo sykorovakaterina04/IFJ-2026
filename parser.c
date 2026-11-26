@@ -80,7 +80,7 @@ char *main_func_name = NULL;
  *
  * Používá se ke kontrole odsazení pokračování uvnitř závorek
  */
-int parser_line_indent = 0;
+int parser_line_indent = -1;
 
 /**
  * @brief Vytvoří kopii řetězce na haldě
@@ -189,7 +189,7 @@ static int skip_eol_cont(void) {
     next();
   }
   if (skipped && current_token.type != TOKEN_EOF &&
-      current_token.col <= parser_line_indent) {
+      current_token.indent <= parser_line_indent) {
     return 2;
   }
   return 0;
@@ -224,7 +224,7 @@ static void indent_pop(indent_stack_t *stack) {
 }
 
 /**
- * @brief Inicializuje zásobník odsazení se základní úrovní 1
+ * @brief Inicializuje zásobník odsazení se základní úrovní 0
  * @param stack Inicializovaný zásobník
  * @retval 0 Úspěch
  * @retval 99 Chyba alokace
@@ -236,7 +236,7 @@ static int indent_init(indent_stack_t *stack) {
   if (stack->items == NULL) {
     return 99;
   }
-  stack->items[0] = 1;
+  stack->items[0] = 0; // 
   return 0;
 }
 
@@ -376,7 +376,7 @@ int parse_prologue() {
   // ifj26*
   skip_eol();
 
-  if (current_token.type != KEYWORD_IMPORT || current_token.col != 1) {
+  if (current_token.type != KEYWORD_IMPORT || current_token.indent != 0) {
     return 2; // CHYBA
   }
 
@@ -479,7 +479,7 @@ int parse(ast_tree_t **out_ast) {
 
     case TOKEN_AT_MAIN:
 
-      if (current_token.col != indent_top(&indent_stack)) {
+      if (current_token.indent != indent_top(&indent_stack)) {
         return parse_fail(2, head, ast, global_symtable,
                           &indent_stack); // CHYBA
       }
@@ -491,7 +491,7 @@ int parse(ast_tree_t **out_ast) {
       }
 
       if (current_token.type != KEYWORD_DEF ||
-          (had_EOL && indent_top(&indent_stack) != current_token.col)) {
+          (had_EOL && indent_top(&indent_stack) != current_token.indent)) {
         return parse_fail(2, head, ast, global_symtable,
                           &indent_stack); // CHYBA
       }
@@ -700,7 +700,7 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
         next();
       }
       if (eol && current_token.type != TOKEN_EOF &&
-          current_token.col <= parser_line_indent) {
+          current_token.indent <= parser_line_indent) {
         free(*out_param_types);
         *out_param_types = NULL;
         return 2;
@@ -988,7 +988,7 @@ static int parse_function_call(tree_t *global_symtable, tree_t *local_symtable,
           next();
         }
         if (eol && current_token.type != TOKEN_EOF &&
-            current_token.col <= parser_line_indent) {
+            current_token.indent <= parser_line_indent) {
           free(func_name);
           free(arg_types);
           ast_destroy_node(args);
@@ -1296,7 +1296,7 @@ static int parse_assignment(tree_t *global_symtable, tree_t *local_symtable,
 static int parse_if(tree_t *global_symtable, tree_t *local_symtable,
                     indent_stack_t *indent_stack, data_type_t func_return_type,
                     ast_node_t **out_node) {
-  int if_col = current_token.col; // odsazeni if
+  int if_indent = current_token.indent; // odsazeni if
   int line = current_token.line;
   *out_node = NULL;
   ast_node_t *cond = NULL;
@@ -1344,7 +1344,7 @@ static int parse_if(tree_t *global_symtable, tree_t *local_symtable,
 
   skip_eol();
 
-  if (current_token.type != KEYWORD_ELSE || current_token.col != if_col) {
+  if (current_token.type != KEYWORD_ELSE || current_token.indent != if_indent) {
     ast_destroy_node(cond);
     ast_destroy_node(then_);
     return 2;
@@ -1522,12 +1522,12 @@ int parse_block(tree_t *global_symtable, tree_t *local_symtable,
     return 2;
   }
   // prvni prikaz v bloku musi byt vys nez nadraena fce
-  int block_col = current_token.col;
+  int block_indent = current_token.indent;
   int line = current_token.line;
-  if (block_col <= indent_top(indent_stack)) {
+  if (block_indent <= indent_top(indent_stack)) {
     return 2;
   }
-  if (indent_push(indent_stack, block_col) != 0) {
+  if (indent_push(indent_stack, block_indent) != 0) {
     return 99;
   }
   ast_node_t *head = NULL;
@@ -1535,16 +1535,16 @@ int parse_block(tree_t *global_symtable, tree_t *local_symtable,
   int res = 0;
 
   while (current_token.type != TOKEN_EOF) {
-    if (current_token.col < block_col) {
+    if (current_token.indent < block_indent) {
       break;
     }
-    if (current_token.col > block_col) {
+    if (current_token.indent > block_indent) {
       res = 2;
       break;
     }
 
     ast_node_t *stmt = NULL;
-    parser_line_indent = current_token.col;
+    parser_line_indent = current_token.indent;
     res = parse_statement(global_symtable, local_symtable, indent_stack,
                           func_return_type, &stmt);
     if (res != 0) {
@@ -1577,7 +1577,7 @@ int parse_block(tree_t *global_symtable, tree_t *local_symtable,
   }
   indent_pop(indent_stack);
   if (res == 0 && current_token.type != TOKEN_EOF &&
-      !indent_contains(indent_stack, current_token.col)) {
+      !indent_contains(indent_stack, current_token.indent)) {
     res = 2;
   }
   if (res != 0) {
@@ -1609,10 +1609,10 @@ int parse_function(tree_t *global_symtable, indent_stack_t *indent_stack,
                    ast_node_t **out_func) {
   *out_func = NULL;
 
-  if (current_token.col != indent_top(indent_stack)) {
+  if (current_token.indent != indent_top(indent_stack)) {
     return 2;
   }
-  parser_line_indent = current_token.col;
+  parser_line_indent = current_token.indent;
   next(); // z def na nazev fce
 
   // název funkce (identifikátor)
@@ -1848,7 +1848,10 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack,
     return 2;
   }
   next(); // za (
-  skip_eol();
+  if(skip_eol_cont() != 0 ){
+    free(func_name);
+    return 2;
+  }
 
   if (current_token.type != TOKEN_RPAREN) {
     free(func_name);
