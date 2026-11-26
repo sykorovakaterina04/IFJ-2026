@@ -1,3 +1,13 @@
+/**
+ *
+ * @file automat.c
+ * @author Ema Osmerova (xosmere00)
+ * @brief projekt IFJ a IAL
+ * @version 0.1
+ * @date 2026-11-26
+ *
+ */
+
 #include "automat.h"
 #include <ctype.h>
 
@@ -81,6 +91,12 @@ static int line_indent = 0;
 static int tab_seen = 0;
 static int at_line_start = 1;
 
+/**
+ * @brief	Funkce pro inicializaci dynamickeho retezce a alokaci pocatecni
+ * pameti
+ *
+ * @param s		retezec, pro ktery ma byt pamet alokovana
+ */
 void str_init(string_t *s) {
 	// nastaveni kapacity a malloc nad daty nacteneho stringu
 	s->capacity = INITIAL_STRING_CAPACITY;
@@ -94,6 +110,12 @@ void str_init(string_t *s) {
 	s->data[0] = '\0';
 }
 
+/**
+ * @brief	Funkce pro pridani znaku do alokovaneho retezce
+ *
+ * @param s		retezec, do ktereho bude znak pridan
+ * @param c		znak, ktery ma byt pridan do retezce
+ */
 void str_add_char(string_t *s, char c) {
 	// kontrola, jestli je potreba provest realokaci
 	if (s->length + 1 >= s->capacity) {
@@ -114,6 +136,11 @@ void str_add_char(string_t *s, char c) {
 	s->data[s->length] = '\0';
 }
 
+/**
+ * @brief	Funkce pro uvolneni alokovane pameti retezce
+ *
+ * @param s	retezec, jehoz pamet ma byt uvolnena
+ */
 void str_free(string_t *s) {
 	// pokud obsahuje string nejaka data, provede se nad nimi free
 	if (s->data != NULL) {
@@ -941,7 +968,14 @@ static token_t automat_inner(FILE *fptr) {
 	return token;
 }
 
-// hlavni obalovaci funkce
+/**
+ * @brief	Hlavni obalovaci funkce lexikalniho analyzatoru, ktera
+ * nacte token pomoci konecneho automatu a doplni k nemu informaci o odsazeni
+ * radku
+ *
+ * @param fptr		ukazatel na vstupni soubor
+ * @return token_t	vraci strukturu nacteneho tokenu
+ */
 token_t automat(FILE *fptr) {
 	token_t token = automat_inner(fptr);
 	token.indent = line_indent;

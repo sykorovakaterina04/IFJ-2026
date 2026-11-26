@@ -1,3 +1,12 @@
+/**
+ *
+ * @file automat.h
+ * @author Ema Osmerova (xosmere00)
+ * @brief projekt IFJ a IAL
+ * @version 0.1
+ * @date 2026-11-26
+ *
+ */
 #ifndef AUTOMAT_H
 #define AUTOMAT_H
 
