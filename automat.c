@@ -75,25 +75,26 @@ static const keyword_entry_t keywords[] = {
 static int current_line = 1;
 static int current_col = 0;
 static int prev_col = 0;
+// staticka promenna pro hlidani odsazeni na zacatku radku
+static int line_indent = 0;
 // staticke promenne hlidani zacatku radku a detekci tab
 static int tab_seen = 0;
 static int at_line_start = 1;
 
-int str_init(string_t *s) {
+void str_init(string_t *s) {
 	// nastaveni kapacity a malloc nad daty nacteneho stringu
 	s->capacity = INITIAL_STRING_CAPACITY;
 	s->data = (char *)malloc(s->capacity * sizeof(char));
 	if (s->data == NULL) {
 		fprintf(stderr, "Chyba: neuspesny malloc!\n");
-		return 0;
+		exit(99);
 	}
 	// nastaveni nulove delky a prazdneho stringu
 	s->length = 0;
 	s->data[0] = '\0';
-	return 1;
 }
 
-int str_add_char(string_t *s, char c) {
+void str_add_char(string_t *s, char c) {
 	// kontrola, jestli je potreba provest realokaci
 	if (s->length + 1 >= s->capacity) {
 		char *tmp;
@@ -101,7 +102,7 @@ int str_add_char(string_t *s, char c) {
 		tmp = realloc(s->data, s->capacity);
 		if (tmp == NULL) {
 			fprintf(stderr, "Chyba: neuspesny realloc!\n");
-			return 0;
+			exit(99);
 		}
 		s->data = tmp;
 	}
@@ -111,7 +112,6 @@ int str_add_char(string_t *s, char c) {
 	s->length++;
 	// nastaveni konce stringu
 	s->data[s->length] = '\0';
-	return 1;
 }
 
 void str_free(string_t *s) {
@@ -184,9 +184,14 @@ void my_ungetc(int c, FILE *fptr) {
 	}
 }
 
-// funkce konecneho automatu prirazujici odpovidajici tokeny nactenym znakum ze
-// vstupniho souboru
-token_t automat(FILE *fptr) {
+/**
+ * @brief Vnitrni funkce konecneho automatu pro lexikalni analyzu, ktera
+ * prirazuje odpovidajici tokeny nactenym znakum ze vstupniho soubru
+ *
+ * @param fptr		ukazatel na vstupni soubor
+ * @return token_t	vraci strukturu nacteneho tokenu
+ */
+static token_t automat_inner(FILE *fptr) {
 
 	string_t buffer;
 	token_t token;
@@ -225,6 +230,9 @@ token_t automat(FILE *fptr) {
 				if (at_line_start == 1) {
 					if (c == '\t') {
 						tab_seen = 1;
+					}
+					if (c == ' ') {
+						line_indent++;
 					}
 				}
 				continue; // preskoceni bilych znaku
@@ -419,6 +427,15 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 			} else {
 				my_ungetc(c, fptr);
+
+				// kontrola samotneho '_'
+				if (buffer.length == 1 && buffer.data[0] == '_') {
+					fprintf(stderr, "Lexikalni chyba: samotne '_' neni platny "
+									"identifikator\n");
+					str_free(&buffer);
+					exit(1);
+				}
+
 				token.type = keyword_type(buffer.data);
 				if (token.type == TOKEN_IDENTIFIER) {
 					token.str_val =
@@ -921,5 +938,15 @@ token_t automat(FILE *fptr) {
 	token.str_val = NULL;
 	token.line = token_start_line;
 	token.col = token_start_col;
+	return token;
+}
+
+// hlavni obalovaci funkce
+token_t automat(FILE *fptr) {
+	token_t token = automat_inner(fptr);
+	token.indent = line_indent;
+	if (token.type == TOKEN_EOL) {
+		line_indent = 0;
+	}
 	return token;
 }
