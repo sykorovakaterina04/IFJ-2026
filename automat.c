@@ -169,6 +169,10 @@ int my_fgetc(FILE *fptr) {
  * @param fptr	Vstupni soubor
  */
 void my_ungetc(int c, FILE *fptr) {
+	if (c == EOF) {
+		return;
+	}
+
 	ungetc(c, fptr);
 	if (c == '\n') {
 		current_line--;
