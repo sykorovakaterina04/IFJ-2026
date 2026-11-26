@@ -16,7 +16,7 @@ static ast_node_t *curr_func = NULL;
 /**
  * @brief pomocna funkce pro tisknuti literalu
  * 
- * @param node predany uzel
+ * @param node predany uzel typu AST_LITERAL
  */
 void print_literal(ast_node_t *node){
     switch (node->data.literal.type){
@@ -46,8 +46,7 @@ void print_literal(ast_node_t *node){
                 printf("string@()");
             break;
         default:
-            break; 
-        //case TYPE_BOOL v pripade rozsireni BOOLTHEN
+            break;
         }
 }
 
@@ -55,7 +54,7 @@ void print_literal(ast_node_t *node){
 /**
  * @brief pomocna funkce pro tisknuti promennych
  * 
- * @param node 
+ * @param node uzel typu AST_VAR nebo AST_VAR_DEF
  */
 void print_var(ast_node_t *node){
 
@@ -79,7 +78,7 @@ void print_var(ast_node_t *node){
 /**
  * @brief pomocna funkce pro tisknuti definic promennych
  * 
- * @param node 
+ * @param node Koren podstromu
  */
 void definuj_defvar(ast_node_t *node){
 
@@ -88,7 +87,7 @@ void definuj_defvar(ast_node_t *node){
         return;
     }
 
-    //pokud nazazis na uzel ast_def_var zpracuj ho a vytiskni promennou
+    //pokud narazis na uzel ast_def_var zpracuj ho a vytiskni promennou
     if(node->type == AST_VAR_DEF){
        printf("DEFVAR LF@%s$%d\n", node->data.variable.name, node->data.variable.id);
         //rekurzivni prochazeni pri kazdem pripade bloku kodu - vytahne vsechny DEFVAR na zacatek funkce
@@ -112,7 +111,7 @@ void definuj_defvar(ast_node_t *node){
 /**
  * @brief funkce pro vestavenou funkci print(value: Any): Unit
  * 
- * @param node 
+ * @param node uzel pro predani parametru funkce
  */
 void case_print(ast_node_t *node){
 
@@ -120,7 +119,7 @@ void case_print(ast_node_t *node){
         return;
     }
 
-    //zadani: hodnota () typu Unit se vypíše jako řetězec "()"
+    //zadani: hodnota () typu Unit se vypise jako retezec "()"
     if(node->data.func.args->return_type == TYPE_UNIT){
         printf("WRITE string@()\n");
     } else {
@@ -135,7 +134,7 @@ void case_print(ast_node_t *node){
 /**
  * @brief funkce pro vestavenou funkci toStr(value: Any): String 
  * 
- * @param node 
+ * @param node uzel pro predani parametru funkce
  */
 void case_toStr(ast_node_t *node){
 
@@ -167,7 +166,7 @@ void case_toStr(ast_node_t *node){
 /**
  * @brief funkce pro vestavenou funkci toInt(value: Double): Int
  * 
- * @param node 
+ * @param node uzel pro predani parametru funkce
  */
 void case_toInt(ast_node_t *node){
 
@@ -177,13 +176,19 @@ void case_toInt(ast_node_t *node){
 
     projdi_strom(node->data.func.args); //posle argumenty na zasobnik
 
+    if((node->data.func.args->return_type == TYPE_INT) &&
+        (node->data.func.args->type != AST_LITERAL) &&
+        (node->data.func.args->type != AST_VAR)){
+        printf("INT2FLOATS\n");
+    }
+
     printf("FLOAT2INTS\n");
 }
 
 /**
  * @brief funkce pro vestavenou funkci strLength(value: String): Int
  * 
- * @param node 
+ * @param node uzel pro predani parametru funkce
  */
 void case_strLength(ast_node_t *node){
 
@@ -262,7 +267,7 @@ void case_readDouble(void){
 /**
  * @brief funkce pro vestavenou funkci ord(value: String, index: Int): Int
  * 
- * @param node 
+ * @param node uzel pro predani parametru funkce
  */
 void case_ord(ast_node_t *node){
 
@@ -279,14 +284,14 @@ void case_ord(ast_node_t *node){
     printf("POPS GF@$tmp2\n");//index
     printf("POPS GF@$tmp1\n");//string
 
-    //zadani: "Je-li řetězec prázdný nebo index mimo rozsah, vrátí -1."
+    //zadani: "Je-li retezec prazdny nebo index mimo rozsah, vrati -1."
 
     //pro index je negativni
     //                   index <  0 ?
     printf("LT GF@$tmp3 GF@$tmp2 int@0\n"); //je index mensi jak 0?
     printf("JUMPIFEQ $wrong_input_ord_%d GF@$tmp3 bool@true\n", id); //LT ulozi bool hodnotu do GF@$tmp3
 
-    //pro index je vetsi nez delka reteze/ retezec je pradny (jeho delka je 0)
+    //pro index je vetsi nez delka retezec/ retezec je prazdny (jeho delka je 0)
     printf("STRLEN GF@$tmp4 GF@$tmp1\n"); //do GF@$tmp4 se ulozi delka retezce
     printf("JUMPIFEQ $wrong_input_ord_%d GF@$tmp4 int@0\n", id); //pokud je delka 0, retezec je prazdny
     //                  index < delka ?
@@ -300,7 +305,7 @@ void case_ord(ast_node_t *node){
     printf("JUMP $ord_end_%d\n", id); //uz neni co resit, skoc na konec
 
     printf("LABEL $all_ok_ord_%d\n", id);
-    //logika prevodu zanku na ascii kod
+    //logika prevodu znaku na ascii kod
     printf("STRI2INT GF@$tmp5 GF@$tmp1 GF@$tmp2\n"); //do GF@$tmp5 se ulozi ascii kod znaku
     printf("LABEL $ord_end_%d\n", id);
     printf("PUSHS GF@$tmp5\n");
@@ -310,7 +315,7 @@ void case_ord(ast_node_t *node){
 /**
  * @brief funkce pro vestavenou funkci chr(code: Int): String
  * 
- * @param node 
+ * @param node uzel pro predani parametru funkce
  */
 void case_chr(ast_node_t *node){
     if(node->data.func.args == NULL){
@@ -325,7 +330,7 @@ void case_chr(ast_node_t *node){
 /**
  * @brief funkce pro vestavenou funkci subStr(value: String, start: Int, end: Int): String
  * 
- * @param node 
+ * @param node uzel pro predani parametru funkce
  */
 void case_subStr(ast_node_t *node){
     
@@ -405,7 +410,7 @@ void case_subStr(ast_node_t *node){
 /**
  * @brief funkce pro generovani literalu
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_LITERAL
  */
 void ast_literal(ast_node_t *node){
     printf("PUSHS ");
@@ -423,7 +428,6 @@ void ast_literal(ast_node_t *node){
 /**
  * @brief funkce pro generovani definice promenne
  * 
- * @param node 
  */
 void ast_var_def(void){
 
@@ -436,7 +440,7 @@ void ast_var_def(void){
 /**
  * @brief funkce pro generovani kodu za pripadu, ze je promenna pouzita (napr. jako parametr)
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_VAR
  */
 void ast_var(ast_node_t *node){
     
@@ -455,7 +459,7 @@ void ast_var(ast_node_t *node){
 /**
  * @brief funkce pro generovani binarnich operaci
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_BINOP
  */
 void ast_binop(ast_node_t *node){
 
@@ -476,7 +480,7 @@ void ast_binop(ast_node_t *node){
     switch (node->data.binop.type){
         case ADD:
         if(node->return_type == TYPE_STRING){ //pokud mame pripad konkatence retezcu je potreba to poresit zvlast
-            //volani CONCAT neni zasobnikova funkce, potreba si projpucit dve promenne z GF@$tmpx
+            //volani CONCAT neni zasobnikova funkce, potreba si propujcit dve promenne z GF@$tmpx
             printf("POPS GF@$tmp2\n"); //prava strana
             printf("POPS GF@$tmp1\n");  //leva strana
             printf("CONCAT GF@$tmp1 GF@$tmp1 GF@$tmp2\n");
@@ -527,7 +531,7 @@ void ast_binop(ast_node_t *node){
 /**
  * @brief funkce pro pridani hodnoty do promenne
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_ASSIGN
  */
 void ast_assign(ast_node_t *node){
 
@@ -543,13 +547,12 @@ void ast_assign(ast_node_t *node){
     printf("POPS "); //Predani z vrcholu zasobniku
     print_var(node->data.assign.dest);
     printf("\n");
-
 }
 
 /**
  * @brief funkce pro volani funkci
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_CALL
  */
 void ast_call(ast_node_t *node){
 
@@ -586,9 +589,9 @@ void ast_call(ast_node_t *node){
 }
 
 /**
- * @brief funkce pro genrovani podminenych vyrazu
+ * @brief funkce pro generovani podminenych vyrazu
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_IF
  */
 void ast_if(ast_node_t *node){
 
@@ -630,7 +633,7 @@ void ast_if(ast_node_t *node){
 /**
  * @brief funkce pro generovani while cyklu
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_WHILE
  */
 void ast_while(ast_node_t *node){
 
@@ -649,7 +652,7 @@ void ast_while(ast_node_t *node){
         printf("JUMPIFEQS $while_end_%d\n",id);
 
         zpracuj_uzel(node->data.condicionals.body);
-        printf("JUMP $while_top_%d\n", id); // pokud podminka plati, vykonec while-body a skoc na vrchol while-cyklu
+        printf("JUMP $while_top_%d\n", id); // pokud podminka plati, vykonej while-body a skoc na vrchol while-cyklu
 
         printf("LABEL $while_end_%d\n", id);
     }
@@ -659,7 +662,7 @@ void ast_while(ast_node_t *node){
 /**
  * @brief funkce pro zpracovani blokovych useku kodu
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_BLOCK
  */
 void ast_block(ast_node_t *node){
 
@@ -681,7 +684,7 @@ void ast_block(ast_node_t *node){
 
             zpracuj_uzel(curr);
 
-            //kontrola jestsli jsme nenarazili na vyraz
+            //kontrola jestli jsme nenarazili na vyraz
             bool is_expr = (curr->type == AST_VAR ||
                 curr->type == AST_LITERAL ||
                 curr->type == AST_CALL||
@@ -720,7 +723,7 @@ void ast_block(ast_node_t *node){
 /**
  * @brief funkce pro generovani ukonceni funkce
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_RETURN
  */
 void ast_return(ast_node_t *node){
 
@@ -750,9 +753,9 @@ void ast_return(ast_node_t *node){
 }
 
 /**
- * @brief funkce pro genrovani definice a tela funkce
+ * @brief funkce pro generovani definice a tela funkce
  * 
- * @param node 
+ * @param node zpracovavany uzel typu AST_FUNC_DEF
  */
 void ast_func_def(ast_node_t *node){
 
@@ -806,7 +809,7 @@ void ast_func_def(ast_node_t *node){
 /**
  * @brief funkce pro zpracovani uzlu
  * 
- * @param node 
+ * @param node zpracovavany uzel
  */
 void zpracuj_uzel(ast_node_t *node){
 
@@ -853,7 +856,7 @@ void zpracuj_uzel(ast_node_t *node){
 /**
  * @brief funkce pro pruchod retezce uzlu
  * 
- * @param node 
+ * @param node pocatecni uzel zpracovavaneho retezce
  */
 void projdi_strom(ast_node_t *node){
 
@@ -864,13 +867,13 @@ void projdi_strom(ast_node_t *node){
 }
 
 /**
- * @brief hlavni funkce geerujici kod
+ * @brief hlavni funkce generujici kod
  * 
- * @param tree 
+ * @param tree predany strom pro generovani kodu
  */
 void generuj_kod(ast_tree_t *tree){
 
-    //vygeneruje hlavičku
+    //vygeneruje hlavicku
     printf(".IFJcode26\n");
 
     //definice docasnych promennych
