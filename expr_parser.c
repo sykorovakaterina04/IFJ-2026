@@ -1,6 +1,7 @@
 /**
  * @file expr_parser.c
- * @brief Implementace precedenční syntaktické analýzy výrazů (PSA) a tvorby AST podstromů
+ * @brief Implementace precedenční syntaktické analýzy výrazů (PSA) a tvorby AST
+ * podstromů
  *
  *  @author Daniel Doubrava (xdoubrd00)
  */
@@ -20,16 +21,16 @@ static data_type_t binop_result_type(binop_type_t op, data_type_t l,
  * Terminály a pomocné symboly na zásobníku
  */
 enum {
-  P_UN = 0, // unarni + -  // -a
-  P_MUL,    // * /
-  P_ADD,    // binarni + - // a - b
-  P_REL,    // < <= > >=
-  P_EQ,     // == !=
-  P_LP,     // (
-  P_RP,     // )
-  P_ID,     // operand (i)
-  P_END,    // DNO
-  P_TERM_COUNT, // Počet terminálů (velikost tabulky)
+  P_UN = 0,             // unarni + -  // -a
+  P_MUL,                // * /
+  P_ADD,                // binarni + - // a - b
+  P_REL,                // < <= > >=
+  P_EQ,                 // == !=
+  P_LP,                 // (
+  P_RP,                 // )
+  P_ID,                 // operand (i)
+  P_END,                // DNO
+  P_TERM_COUNT,         // Počet terminálů (velikost tabulky)
   SYM_E = P_TERM_COUNT, // neterminal E
   SYM_HANDLE            // zarazka <
 };
@@ -42,7 +43,7 @@ enum {
  * @c '>' redukovat, @c 'F' úspěšný konec výrazu, @c ' ' chyba
  */
 static const char PSA_TABLE[P_TERM_COUNT][P_TERM_COUNT] = {
-    //UN  MUL  ADD  REL  EQ    (    )    I    DNO
+    // UN  MUL  ADD  REL  EQ    (    )    I    DNO
     {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // UN
     {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // MUL
     {'<', '<', '>', '>', '>', '<', '>', '<', '>'}, // ADD
@@ -58,9 +59,9 @@ static const char PSA_TABLE[P_TERM_COUNT][P_TERM_COUNT] = {
  * @brief Položka zásobníku precedenční analýzy
  */
 typedef struct {
-  int sym;          ///< Symbol 
-  token_type_t tok; ///< Původní token 
-  ast_node_t *node; ///< Uzel AST 
+  int sym;          ///< Symbol
+  token_type_t tok; ///< Původní token
+  ast_node_t *node; ///< Uzel AST
   data_type_t type; ///< Datový typ výrazu
   int line;         ///< Řádek ve zdrojovém kódu
 } psa_item_t;
@@ -70,8 +71,8 @@ typedef struct {
  */
 typedef struct {
   psa_item_t *items; ///< Pole položek
-  int top; ///< Počet prvků na zásobníku
-  int cap; ///< Alokovaná kapacita
+  int top;           ///< Počet prvků na zásobníku
+  int cap;           ///< Alokovaná kapacita
 } psa_stack_t;
 
 /**
@@ -347,7 +348,7 @@ static int clean(psa_stack_t *stack, int err_code) {
  * Zpracovává literály, proměnné, závorky, unární @c + @c - a binární operátory
  * @c * @c / @c + @c - @c < @c <= @c > @c >= @c == @c !=. Výraz končí prvním
  * tokenem, který do výrazu nepatří. Konce řádků jsou povoleny uvnitř závorek
- * a při @p in_parens, vždy s kontrolou odsazení pokračování. 
+ * a při @p in_parens, vždy s kontrolou odsazení pokračování.
  * @param local_symtable Tabulka symbolů pro vyhledání proměnných
  * @param[out] out_type Typ výrazu
  * @param[out] out_node Kořen AST výrazu (může být NULL, pak se uzel uvolní)

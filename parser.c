@@ -17,15 +17,16 @@
 
 // pomocne struktry, funkce
 /**
- * @brief Záznam o volání funkce, která v okamžiku volání ještě nebyla definována
+ * @brief Záznam o volání funkce, která v okamžiku volání ještě nebyla
+ * definována
  *
  * Kontrola počtu a typů argumentů se u takového volání odkládá na
  * konec syntaktické analýzy (viz ::verify_pending_calls)
  */
 typedef struct {
-  char *func_name;       ///< Jméno volané funkce (vlastní kopie)
+  char *func_name;        ///< Jméno volané funkce (vlastní kopie)
   data_type_t *arg_types; ///< Typy argumentů v místě volání (může být NULL)
-  int arg_count;         ///< Počet argumentů
+  int arg_count;          ///< Počet argumentů
 } pending_call_t;
 
 /** @brief Dynamické pole odložených kontrol volání funkcí */
@@ -96,7 +97,8 @@ static char *dup_str(const char *s) {
 }
 
 /**
- * @brief Připojí uzel (včetně jeho řetězu @c next) na konec jednosměrného seznamu
+ * @brief Připojí uzel (včetně jeho řetězu @c next) na konec jednosměrného
+ * seznamu
  * @param head Ukazatel na začátek seznamu (při prázdném seznamu se nastaví)
  * @param tail Ukazatel na poslední uzel seznamu (po připojení se aktualizuje)
  * @param node Připojovaný uzel; NULL je ignorováno
@@ -119,7 +121,8 @@ static void list_append(ast_node_t **head, ast_node_t **tail,
 }
 
 /**
- * @brief Dokončí jednořádkový příkaz: ověří jeho správné ukončení a při chybě uvolní AST
+ * @brief Dokončí jednořádkový příkaz: ověří jeho správné ukončení a při chybě
+ * uvolní AST
  * @param res Návratový kód dosavadního zpracování příkazu
  * @param out Ukazatel na vytvořený uzel; při chybě se uvolní a nastaví na NULL
  * @return 0 při úspěchu, jinak chybový kód (viz ::expr_ended)
@@ -145,7 +148,8 @@ static int indent_top(const indent_stack_t *stack) {
 }
 
 /**
- * @brief Vloží novou úroveň odsazení na zásobník (podle potřeby zvětší kapacitu)
+ * @brief Vloží novou úroveň odsazení na zásobník (podle potřeby zvětší
+ * kapacitu)
  * @param stack Zásobník odsazení
  * @param col Sloupec nového bloku
  * @retval 0 Úspěch
@@ -214,7 +218,8 @@ static bool indent_contains(const indent_stack_t *stack, int col) {
 }
 
 /**
- * @brief Odebere vrcholovou úroveň odsazení (základní úroveň se nikdy neodebírá)
+ * @brief Odebere vrcholovou úroveň odsazení (základní úroveň se nikdy
+ * neodebírá)
  * @param stack Zásobník odsazení
  */
 static void indent_pop(indent_stack_t *stack) {
@@ -306,7 +311,8 @@ token_t peek_token(void) {
 }
 
 /**
- * @brief Posune parser na další token (uvolní předchozí, použije token z peek, jinak čte nový)
+ * @brief Posune parser na další token (uvolní předchozí, použije token z peek,
+ * jinak čte nový)
  *
  * Výsledek je uložen v ::current_token
  */
@@ -344,7 +350,8 @@ static void cleanup_parser(tree_t *global_symtable,
 }
 
 /**
- * @brief Společné ukončení parseru při chybě: uvolní AST, zdroje a vrátí chybový kód
+ * @brief Společné ukončení parseru při chybě: uvolní AST, zdroje a vrátí
+ * chybový kód
  * @param chyba Chybový kód k vrácení
  * @param head Dosud vytvořený seznam funkcí v AST
  * @param ast Kořenová struktura AST
@@ -426,7 +433,7 @@ int parse(ast_tree_t **out_ast) {
   int result;
   int main = 0;
   *out_ast = NULL;
-  pending_calls.items = NULL; 
+  pending_calls.items = NULL;
   pending_calls.count = 0;
   pending_calls.capacity = 0;
   next_var_id = 0;
@@ -728,7 +735,8 @@ static int parse_params(tree_t *local_symtable, data_type_t **out_param_types,
 }
 
 /**
- * @brief Zjistí kompatibilitu typů (shodné typy, @c TYPE_ANY nebo rozšíření Int na Double)
+ * @brief Zjistí kompatibilitu typů (shodné typy, @c TYPE_ANY nebo rozšíření Int
+ * na Double)
  * @param source Typ zdrojové hodnoty
  * @param target Cílový typ
  * @return true, pokud lze hodnotu typu @p source použít na místě @p target
@@ -747,7 +755,8 @@ static bool is_type_compatible(data_type_t source, data_type_t target) {
 }
 
 /**
- * @brief Zpracuje jeden příkaz bloku (definice, přiřazení, volání, if, while, return, výraz)
+ * @brief Zpracuje jeden příkaz bloku (definice, přiřazení, volání, if, while,
+ * return, výraz)
  *
  * Příkaz nemůže začínat operátorem Rozlišení přiřazení a volání funkce se
  * provádí nahlédnutím o jeden token dopředu
@@ -816,7 +825,8 @@ static int parse_statement(tree_t *global_symtable, tree_t *local_symtable,
 }
 
 /**
- * @brief Ověří, že jednořádkový příkaz skončil koncem řádku, souboru nebo středníkem
+ * @brief Ověří, že jednořádkový příkaz skončil koncem řádku, souboru nebo
+ * středníkem
  * @retval 0 Správné ukončení
  * @retval 2 Za příkazem následuje nepovolený token
  */
@@ -916,8 +926,8 @@ static int verify_pending_calls(tree_t *global_symtable) {
  * @brief Zpracuje volání funkce @c id(argumenty)
  *
  * Argumenty jsou parsovány jako výrazy. Je-li funkce již známá, ihned se
- * zkontroluje počet a typy argumentů; jinak se volání odloží (::pending_calls_add)
- * a výsledný typ je @c TYPE_ANY.
+ * zkontroluje počet a typy argumentů; jinak se volání odloží
+ * (::pending_calls_add) a výsledný typ je @c TYPE_ANY.
  * @param global_symtable Globální tabulka symbolů
  * @param local_symtable Lokální tabulka symbolů
  * @param[out] out_return_type Návratový typ funkce
@@ -1105,7 +1115,7 @@ static int parse_rs(tree_t *global_symtable, tree_t *local_symtable,
 
 /**
  * @brief Zpracuje definici proměnné @c val / @c var (s volitelným typem).
- 
+
  * Pravá strana se parsuje před vložením proměnné do tabulky symbolů, takže
  * @c "val x = x + 1" v podbloku použije vnější @c x. Vytvoří dvojici uzlů
  * definice a přiřazení
@@ -1411,7 +1421,7 @@ static int parse_while(tree_t *global_symtable, tree_t *local_symtable,
     ast_destroy_node(cond);
     return 2;
   }
-    // podminka musi byt Boolean; TYPE_ANY = typ jeste neznamy
+  // podminka musi byt Boolean; TYPE_ANY = typ jeste neznamy
   if (cond_type != TYPE_BOOL && cond_type != TYPE_ANY) {
     ast_destroy_node(cond);
     return 6;
@@ -1500,16 +1510,17 @@ static int parse_return(tree_t *global_symtable, tree_t *local_symtable,
 /**
  * @brief Zpracuje odsazený blok příkazů
  *
- * Odsazení prvního příkazu musí být větší než odsazení nadřazeného bloku, všechny
- * příkazy bloku musí mít stejné odsazení. Blok končí návratem na menší odsazení,
- * které musí odpovídat některému nadřazenému bloku. Podporuje více příkazů
- * na řádku oddělených středníkem Blok nesmí být prázdný
+ * Odsazení prvního příkazu musí být větší než odsazení nadřazeného bloku,
+ * všechny příkazy bloku musí mít stejné odsazení. Blok končí návratem na menší
+ * odsazení, které musí odpovídat některému nadřazenému bloku. Podporuje více
+ * příkazů na řádku oddělených středníkem Blok nesmí být prázdný
  * @param global_symtable Globální tabulka symbolů
  * @param local_symtable Tabulka symbolů tohoto bloku
  * @param indent_stack Zásobník odsazení
  * @param func_return_file Návratový typ aktuální funkce
  * @param[out] out_block Uzel bloku v AST
- * @return 0 při úspěchu, jinak chybový kód (2 při špatném odsazení nebo syntaxi)
+ * @return 0 při úspěchu, jinak chybový kód (2 při špatném odsazení nebo
+ * syntaxi)
  */
 int parse_block(tree_t *global_symtable, tree_t *local_symtable,
                 indent_stack_t *indent_stack, data_type_t func_return_type,
@@ -1947,7 +1958,8 @@ int parse_main(tree_t *global_symtable, indent_stack_t *indent_stack,
 }
 
 /**
- * @brief Zaregistruje vestavěné funkce (print, readLine, readInt, readDouble, toStr, toInt, strLength, subStr, ord, chr) do globální tabulky symbolů
+ * @brief Zaregistruje vestavěné funkce (print, readLine, readInt, readDouble,
+ * toStr, toInt, strLength, subStr, ord, chr) do globální tabulky symbolů
  * @param global_symtable Globální tabulka symbolů
  * @retval 0 Úspěch
  * @retval 99 Chyba alokace
@@ -1990,7 +2002,8 @@ int register_functions(tree_t *global_symtable) {
 }
 
 /**
- * @brief Vloží proměnnou nebo parametr do tabulky symbolů a přidělí mu unikátní ID
+ * @brief Vloží proměnnou nebo parametr do tabulky symbolů a přidělí mu unikátní
+ * ID
  * @param table Cílová tabulka symbolů
  * @param name Jméno proměnné
  * @param type Druh symbolu (@c VARIABLE, @c KONSTANT, @c PARAM)

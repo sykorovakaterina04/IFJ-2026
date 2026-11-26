@@ -1,6 +1,7 @@
 /**
  * @file parser.h
- * @brief Rozhraní syntaktického analyzátoru (rekurzivní sestup) pro překladač jazyka IFJ26
+ * @brief Rozhraní syntaktického analyzátoru (rekurzivní sestup) pro překladač
+ * jazyka IFJ26
  *
  * @author Daniel Doubrava (xdoubrd00)
  */
@@ -12,9 +13,9 @@
 #include "automat.h"
 #include "symtable.h"
 
-
 /**
- * @brief Sloupec začátku aktuálního logického řádku (kontrola odsazení v závorkách)
+ * @brief Sloupec začátku aktuálního logického řádku (kontrola odsazení v
+ * závorkách)
  */
 extern int parser_line_indent;
 /**
@@ -31,7 +32,7 @@ typedef struct {
  */
 extern token_t current_token;
 
-/** 
+/**
  * @brief Jméno funkce s anotací @c \@main
  */
 extern char *main_func_name;
