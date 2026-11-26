@@ -160,7 +160,12 @@ static tnode_t * symtable_lrotate(tnode_t *node){
 
     return new_root;
 }
-
+/**
+ * @brief vypocita balanc uzlu
+ * 
+ * @param node 
+ * @return int 
+ */
 static int symtable_getbalance(tnode_t *node){
     return (node == NULL) ? 0 : 
     symtable_getheight(node->left) - symtable_getheight(node->right);
@@ -172,6 +177,7 @@ static int symtable_getbalance(tnode_t *node){
 
 static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_type_t type, data_type_t data_type, int line, int param_count, data_type_t *param_types){
 
+    // pokud je uzel NULL, vytvori tam novy a da do nej vsechny parametry
     if(node == NULL){
         tnode_t *new_node = calloc(1, sizeof(tnode_t));
         if ((new_node == NULL)){
@@ -212,7 +218,7 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
         return(new_node);
     }
     
-
+    // rekurzivni sestup stejny jako u vyhledavani
     if (strcmp(key, node->key) < 0){
         node->left = symtable_insert_recursive(node->left, key, type, data_type, line, param_count, param_types);
     } else if(strcmp(key, node->key) > 0) {
@@ -221,22 +227,33 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
         return node;
     }
 
+    // vypocitani vysky daneho uzlu
     node->height = symtable_max(symtable_getheight(node->left), symtable_getheight(node->right)) + 1;
 
+    // pokud je uzel nevyvazeny smerem doleva
     if (symtable_getbalance(node) > 1){
+
+        //pokud je levy potomek nevyvazeny doleva, provede se prava rotace
         if(symtable_getbalance(node->left) >= 0){
             return symtable_rrotate(node);
         }
+
+        // pokud je levy potomek nevyvazeny doprava, provede se nejdrive leva rotace a potom prava rotace
         if(symtable_getbalance(node->left) < 0){
             node->left = symtable_lrotate(node->left);
             return symtable_rrotate(node);
         }  
     }
 
+    // pokud je uzel nevyvazeny smerem doprava
     if (symtable_getbalance(node) < -1){
+
+        //pokud je pravy potomek nevyvazeny doprava, provede se leva rotace
         if(symtable_getbalance(node->right) <= 0){
             return symtable_lrotate(node);
         }
+
+        // pokud je parvy potomek nevyvazeny doleva, provede se nejdrive prava rotace a potom leva rotace
         if(symtable_getbalance(node->right) > 0){
             node->right = symtable_rrotate(node->right);
             return symtable_lrotate(node);
@@ -249,32 +266,49 @@ static tnode_t *symtable_insert_recursive(tnode_t *node,const char *key, node_ty
 
 
 
-
+/**
+ * @brief funkce pro vlozeni parametru, konstanty a promennych
+ * 
+ * @param tree 
+ * @param key 
+ * @param type 
+ * @param data_type 
+ * @param line 
+ * @return int 
+ */
 int symtable_insert(tree_t *tree, const char *key, node_type_t type, data_type_t data_type, int line){
 
+    // pokud jsou ukazatele nulove, nastane chyba
     if (tree == NULL || key == NULL){
         return 1;
     }
 
-
-    
-
+    // zacatek rekurzivniho vkladani
     tree->root = symtable_insert_recursive(tree->root, key, type, data_type, line, 0, NULL);
 
     return 0;
 }
 
 
-
+/**
+ * @brief funkce pro vkladani funkci
+ * 
+ * @param tree 
+ * @param key 
+ * @param data_type 
+ * @param line 
+ * @param param_count 
+ * @param param_types 
+ * @return int 
+ */
 int symtable_insert_func(tree_t *tree, const char *key, data_type_t data_type, int line, int param_count, data_type_t *param_types){
 
+    // pokud jsou ukazatele nulove, nastane chyba
     if (tree == NULL || key == NULL){
         return 1;
     }
 
-
-    
-
+    // zacatek rekurzivniho vkladani
     tree->root = symtable_insert_recursive(tree->root, key, FUNCTION, data_type, line, param_count, param_types);
 
     return 0;
@@ -283,16 +317,27 @@ int symtable_insert_func(tree_t *tree, const char *key, data_type_t data_type, i
 
 
 
-
+/**
+ * @brief funkce pro uvolneni jednotlivych uzlu
+ * 
+ * @param node 
+ */
 static void symtable_destroy(tnode_t *node){
     if (node != NULL){
+
+        // uvolneni leveho a praveho potomka
         symtable_destroy(node->left);
         symtable_destroy(node->right);
+
+        // uvolneni klice
         free(node->key);
 
+        // pokud je uzel typu funkce, uvolni i parametry
         if(node->data.type == FUNCTION){
             free(node->data.param_types);
         }
+
+        // uvolneni samotneho uzlu
         free(node);
     }
 
@@ -301,10 +346,18 @@ static void symtable_destroy(tnode_t *node){
 
 
 
-
+/**
+ * @brief funkce na vymazani stromu
+ * 
+ * @param tree 
+ */
 void symtable_destroy_tree(tree_t *tree){
     if (tree == NULL) return;
+
+    // rekurzivni uvolneni vsech uzlu
     symtable_destroy(tree->root);
+
+    // uvolneni samotneho stromu
     free(tree);
 
 }
