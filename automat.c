@@ -1,3 +1,13 @@
+/**
+ *
+ * @file automat.c
+ * @author Ema Osmerova (xosmere00)
+ * @brief projekt IFJ a IAL
+ * @version 0.1
+ * @date 2026-11-26
+ *
+ */
+
 #include "automat.h"
 #include <ctype.h>
 
@@ -75,25 +85,38 @@ static const keyword_entry_t keywords[] = {
 static int current_line = 1;
 static int current_col = 0;
 static int prev_col = 0;
+// staticka promenna pro hlidani odsazeni na zacatku radku
+static int line_indent = 0;
 // staticke promenne hlidani zacatku radku a detekci tab
 static int tab_seen = 0;
 static int at_line_start = 1;
 
-int str_init(string_t *s) {
+/**
+ * @brief	Funkce pro inicializaci dynamickeho retezce a alokaci pocatecni
+ * pameti
+ *
+ * @param s		retezec, pro ktery ma byt pamet alokovana
+ */
+void str_init(string_t *s) {
 	// nastaveni kapacity a malloc nad daty nacteneho stringu
 	s->capacity = INITIAL_STRING_CAPACITY;
 	s->data = (char *)malloc(s->capacity * sizeof(char));
 	if (s->data == NULL) {
 		fprintf(stderr, "Chyba: neuspesny malloc!\n");
-		return 0;
+		exit(99);
 	}
 	// nastaveni nulove delky a prazdneho stringu
 	s->length = 0;
 	s->data[0] = '\0';
-	return 1;
 }
 
-int str_add_char(string_t *s, char c) {
+/**
+ * @brief	Funkce pro pridani znaku do alokovaneho retezce
+ *
+ * @param s		retezec, do ktereho bude znak pridan
+ * @param c		znak, ktery ma byt pridan do retezce
+ */
+void str_add_char(string_t *s, char c) {
 	// kontrola, jestli je potreba provest realokaci
 	if (s->length + 1 >= s->capacity) {
 		char *tmp;
@@ -101,7 +124,7 @@ int str_add_char(string_t *s, char c) {
 		tmp = realloc(s->data, s->capacity);
 		if (tmp == NULL) {
 			fprintf(stderr, "Chyba: neuspesny realloc!\n");
-			return 0;
+			exit(99);
 		}
 		s->data = tmp;
 	}
@@ -111,9 +134,13 @@ int str_add_char(string_t *s, char c) {
 	s->length++;
 	// nastaveni konce stringu
 	s->data[s->length] = '\0';
-	return 1;
 }
 
+/**
+ * @brief	Funkce pro uvolneni alokovane pameti retezce
+ *
+ * @param s	retezec, jehoz pamet ma byt uvolnena
+ */
 void str_free(string_t *s) {
 	// pokud obsahuje string nejaka data, provede se nad nimi free
 	if (s->data != NULL) {
@@ -141,8 +168,8 @@ token_type_t keyword_type(const char *str) {
 }
 
 /**
- * @brief	Funkce pro nacitani vstupu, zaroven aktualizujici polohu ve vstupnim
- * souboru
+ * @brief	Funkce pro nacitani vstupu, zaroven aktualizujici polohu ve
+ * vstupnim souboru
  *
  * @param fptr	Vstupni soubor
  * @return int	Nacteny znak jako int nebo EOF
@@ -169,6 +196,10 @@ int my_fgetc(FILE *fptr) {
  * @param fptr	Vstupni soubor
  */
 void my_ungetc(int c, FILE *fptr) {
+	if (c == EOF) {
+		return;
+	}
+
 	ungetc(c, fptr);
 	if (c == '\n') {
 		current_line--;
@@ -180,9 +211,14 @@ void my_ungetc(int c, FILE *fptr) {
 	}
 }
 
-// funkce konecneho automatu prirazujici odpovidajici tokeny nactenym znakum ze
-// vstupniho souboru
-token_t automat(FILE *fptr) {
+/**
+ * @brief Vnitrni funkce konecneho automatu pro lexikalni analyzu, ktera
+ * prirazuje odpovidajici tokeny nactenym znakum ze vstupniho soubru
+ *
+ * @param fptr		ukazatel na vstupni soubor
+ * @return token_t	vraci strukturu nacteneho tokenu
+ */
+static token_t automat_inner(FILE *fptr) {
 
 	string_t buffer;
 	token_t token;
@@ -221,6 +257,9 @@ token_t automat(FILE *fptr) {
 				if (at_line_start == 1) {
 					if (c == '\t') {
 						tab_seen = 1;
+					}
+					if (c == ' ') {
+						line_indent++;
 					}
 				}
 				continue; // preskoceni bilych znaku
@@ -415,6 +454,15 @@ token_t automat(FILE *fptr) {
 				str_add_char(&buffer, c);
 			} else {
 				my_ungetc(c, fptr);
+
+				// kontrola samotneho '_'
+				if (buffer.length == 1 && buffer.data[0] == '_') {
+					fprintf(stderr, "Lexikalni chyba: samotne '_' neni platny "
+									"identifikator\n");
+					str_free(&buffer);
+					exit(1);
+				}
+
 				token.type = keyword_type(buffer.data);
 				if (token.type == TOKEN_IDENTIFIER) {
 					token.str_val =
@@ -439,6 +487,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'm') {
 				state = KA_AT_A;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -446,6 +496,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'a') {
 				state = KA_AT_I;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -453,6 +505,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'i') {
 				state = KA_AT_N;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -460,6 +514,8 @@ token_t automat(FILE *fptr) {
 			if (c == 'n') {
 				state = KA_AT_MAIN_END;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -471,6 +527,8 @@ token_t automat(FILE *fptr) {
 				token.col = token_start_col;
 				return token;
 			} else {
+				fprintf(stderr,
+						"Lexikalni chyba: neplatna sekvence v anotaci @main\n");
 				exit(1);
 			}
 			break;
@@ -499,10 +557,9 @@ token_t automat(FILE *fptr) {
 				tab_seen = 0;
 				token.type = TOKEN_EOL;
 				token.str_val = NULL;
-				token.line = current_line -1;
+				token.line = current_line - 1;
 				token.col = prev_col;
 				return token;
-				
 			} else if (c == EOF) {
 				my_ungetc(c, fptr);
 				state = KA_START;
@@ -542,6 +599,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			} else if (c == '\n') {
 				comment_has_nl++;
+				state = KA_BLOCK_COMMENT;
 			} else {
 				state = KA_BLOCK_COMMENT;
 			}
@@ -558,6 +616,7 @@ token_t automat(FILE *fptr) {
 				exit(1);
 			} else if (c == '\n') {
 				comment_has_nl++;
+				state = KA_BLOCK_COMMENT;
 			} else {
 				state = KA_BLOCK_COMMENT;
 			}
@@ -570,14 +629,12 @@ token_t automat(FILE *fptr) {
 				tab_seen = 0;
 				token.type = TOKEN_EOL;
 				token.str_val = NULL;
-				token.line = current_line -1;
+				token.line = current_line - 1;
 				token.col = prev_col;
 				return token;
-				
 			} else if (c == EOF) {
-				fprintf(stderr,
-						"Lexikalni chyba: Nedokonceny blokovy komentar\n");
-				exit(1);
+				my_ungetc(c, fptr);
+				state = KA_START;
 			} else {
 				fprintf(stderr,
 						"Lexikalni chyba: za vice radkovym blokovym komentarem "
@@ -908,5 +965,22 @@ token_t automat(FILE *fptr) {
 	token.str_val = NULL;
 	token.line = token_start_line;
 	token.col = token_start_col;
+	return token;
+}
+
+/**
+ * @brief	Hlavni obalovaci funkce lexikalniho analyzatoru, ktera
+ * nacte token pomoci konecneho automatu a doplni k nemu informaci o odsazeni
+ * radku
+ *
+ * @param fptr		ukazatel na vstupni soubor
+ * @return token_t	vraci strukturu nacteneho tokenu
+ */
+token_t automat(FILE *fptr) {
+	token_t token = automat_inner(fptr);
+	token.indent = line_indent;
+	if (token.type == TOKEN_EOL) {
+		line_indent = 0;
+	}
 	return token;
 }
